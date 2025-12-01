@@ -1,0 +1,48 @@
+MBT Toroidal Curvature Simulation – Two Particles
+This simulation models two particles (cyan and lime) entering a rotational MBT curvature field from opposite directions.
+Each particle is affected by the MBT-aligned force, bending their trajectories inward in predictable paths.
+ 
+Full Code:
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def mbt_curvature_field(x, y):
+    r = np.sqrt(x**2 + y**2)
+    fx = -y / (r**2 + 1e-3)
+    fy = x / (r**2 + 1e-3)
+    return fx, fy
+
+n_steps = 600
+dt = 0.01
+
+particles = {
+    'cyan': {'pos': np.array([-3.0, 0.5]), 'vel': np.array([2.0, 0.0]), 'trail': [], 'color': 'cyan'},
+    'lime': {'pos': np.array([3.0, -0.5]), 'vel': np.array([-2.0, 0.0]), 'trail': [], 'color': 'lime'}
+}
+
+for _ in range(n_steps):
+    for p in particles.values():
+        px, py = p['pos']
+        fx, fy = mbt_curvature_field(px, py)
+        p['vel'] += np.array([fx, fy]) * dt
+        p['pos'] += p['vel'] * dt
+        p['trail'].append(p['pos'].copy())
+
+plt.figure(figsize=(8, 8))
+for name, p in particles.items():
+    trail = np.array(p['trail'])
+    plt.plot(trail[:, 0], trail[:, 1], label=name + ' path', color=p['color'])
+    plt.plot(trail[-1, 0], trail[-1, 1], 'x', color=p['color'], markersize=10)
+
+x, y = np.meshgrid(np.linspace(-5, 5, 30), np.linspace(-5, 5, 30))
+fx, fy = mbt_curvature_field(x, y)
+plt.streamplot(x, y, fx, fy, color='purple', density=1, linewidth=0.5, arrowsize=1)
+
+plt.title("Two Particles Interacting with MBT Toroidal Curvature Field")
+plt.xlabel("X")
+plt.ylabel("Y")
+plt.legend()
+plt.grid(True)
+plt.axis('equal')
+plt.show()
