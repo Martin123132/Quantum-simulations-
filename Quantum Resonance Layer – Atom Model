@@ -1,0 +1,42 @@
+MBT Simulation: Quantum Resonance Layer – Atom Model
+This code simulates an MBT-based atomic structure with added quantum resonance layers. These layers act like quantized standing waves, mimicking electron orbital shells. This step deepens the physical behavior while remaining visually intuitive.
+Python Code:
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# Simulation settings
+num_shells = 4
+points_per_shell = 300
+shell_radii = np.linspace(1, 4, num_shells)
+frequencies = [1, 2, 3, 4]
+
+fig = plt.figure(figsize=(10, 10))
+ax = fig.add_subplot(111, projection='3d')
+
+for i, radius in enumerate(shell_radii):
+    phi = np.linspace(0, 2 * np.pi, points_per_shell)
+    theta = np.linspace(0, np.pi, points_per_shell)
+    phi, theta = np.meshgrid(phi, theta)
+
+    # Standing wave resonance pattern for MBT
+    resonance = np.sin(frequencies[i] * theta) * np.sin(frequencies[i] * phi)
+    resonance_scaled = 1 + 0.1 * resonance  # small radial variation
+
+    x = radius * resonance_scaled * np.sin(theta) * np.cos(phi)
+    y = radius * resonance_scaled * np.sin(theta) * np.sin(phi)
+    z = radius * resonance_scaled * np.cos(theta)
+
+    ax.plot_surface(x, y, z, rstride=5, cstride=5, alpha=0.5, cmap='plasma')
+
+# Nucleus
+u, v = np.mgrid[0:2*np.pi:30j, 0:np.pi:15j]
+xn = 0.5 * np.cos(u) * np.sin(v)
+yn = 0.5 * np.sin(u) * np.sin(v)
+zn = 0.5 * np.cos(v)
+ax.plot_surface(xn, yn, zn, color='black', alpha=0.9)
+
+ax.set_title("MBT Quantum Resonance Shells")
+ax.set_axis_off()
+plt.show()
