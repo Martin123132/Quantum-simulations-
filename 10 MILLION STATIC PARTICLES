@@ -1,0 +1,67 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import trapezoid
+
+# PARAMETERS
+grid_size = 100
+timesteps = 140
+dt = 0.25
+width = 0.1  # much narrower particles to accommodate 10 million clearly
+r = np.linspace(0, grid_size, grid_size)
+dr = r[1] - r[0]
+
+# INIT 10 MILLION STATIC PARTICLES
+n_particles = 10_000_000
+centers = np.linspace(0, grid_size, n_particles)
+phases = np.linspace(0, 2 * np.pi, n_particles)
+ψ = [np.exp(-((r - c)**2)/(2*width**2)) * np.exp(1j * p)
+     for c, p in zip(centers, phases)]
+n = len(ψ)
+
+# STORAGE
+ψ_total = []
+overlap = []
+CoMs = []
+
+# TIME EVOLUTION
+for t in range(timesteps):
+    V = -np.exp(-((r - grid_size/2)/10)**2)
+    for i in range(n):
+        lap = np.zeros_like(ψ[i], dtype=complex)
+        lap[1:-1] = (ψ[i][2:] - 2*ψ[i][1:-1] + ψ[i][:-2]) / dr**2
+        ψ[i] += dt * (0.8 * lap - 0.6 * V * ψ[i])
+        norm = np.sqrt(trapezoid(np.abs(ψ[i])**2, r))
+        if norm != 0:
+            ψ[i] /= norm
+
+    ψ_total.append(np.sum(ψ, axis=0))
+    ov = sum(trapezoid(np.abs(ψ[i]*np.conj(ψ[j])), r)
+             for i in range(0, n, 500000) for j in range(i+1, min(i+500000, n)))  # highly subsampled for efficiency
+    overlap.append(ov)
+    CoMs.append([trapezoid(r * np.abs(ψ[i])**2, r)/trapezoid(np.abs(ψ[i])**2, r) for i in range(0, n, 500000)])
+
+# PLOT RESULTS (Highly optimized for clarity and performance)
+ψ_total = np.array(ψ_total)
+CoMs = np.array(CoMs)
+
+fig, axs = plt.subplots(3, 1, figsize=(10,12))
+
+# Plotting an extremely limited subset of particles for visual clarity
+for i in range(0, n, 2_000_000):  # Plot every 2 millionth particle
+    axs[0].plot(r, np.abs(ψ[i])**2, lw=0.5)
+axs[0].plot(r, np.abs(ψ_total[-1])**2, color='black', lw=2, label='Final Total')
+axs[0].set_title("Composite of 10 Million Static Particles (Extremely Limited Subset)")
+axs[0].legend()
+
+axs[1].plot(np.linspace(0, dt*timesteps, timesteps), overlap, color='mediumvioletred')
+axs[1].set_ylabel("Total Overlap")
+axs[1].set_title("Resonance Fusion Monitor (10 Million Particles)")
+
+# CoM for selected particles
+for i in range(CoMs.shape[1]):
+    axs[2].plot(np.linspace(0, dt*timesteps, timesteps), CoMs[:, i], lw=0.5)
+axs[2].set_title("Center of Mass Drift — Selected Particles")
+axs[2].set_xlabel("Time")
+
+plt.tight_layout()
+plt.show()
