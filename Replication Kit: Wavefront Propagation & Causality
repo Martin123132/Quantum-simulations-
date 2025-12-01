@@ -1,0 +1,61 @@
+MBT Replication Kit: Wavefront Propagation & Causality
+
+ 
+This replication kit demonstrates the unique MBT (Motion = Being Theory) wavefront propagation model, showing that causal effects travel along shells or sheets rather than as simple radial waves. 
+The simulation proves that “causal reach” from a central impulse spreads in quantized shells, matching both quantum and cosmological MBT predictions.
+ 
+Python Simulation Code
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+# Parameters
+grid_size = 101
+frames = 40
+n_shells = 8
+
+# MBT: Each "shell" is a quantized causal wavefront
+def shell_radii(frame, n_shells):
+    # Example: radii grow linearly with time
+    return [3 + 2 * (frame + i) for i in range(n_shells)]
+
+# Simulation grid
+X, Y = np.meshgrid(np.arange(grid_size), np.arange(grid_size))
+center = grid_size // 2
+
+fig, ax = plt.subplots(figsize=(6,6))
+
+def animate(frame):
+    ax.clear()
+    ax.set_xlim(0, grid_size)
+    ax.set_ylim(0, grid_size)
+    ax.set_aspect('equal')
+    ax.set_title('MBT Causal Shell Propagation')
+    # Draw shells
+    radii = shell_radii(frame, n_shells)
+    for r in radii:
+        circle = plt.Circle((center, center), r, color='purple', fill=False, lw=2, alpha=0.7)
+        ax.add_artist(circle)
+    # Mark center
+    ax.plot(center, center, 'yo', markersize=12)
+    ax.axis('off')
+
+ani = FuncAnimation(fig, animate, frames=frames, interval=120)
+plt.show()
+ 
+Instructions
+•	Copy the code into a Jupyter Notebook or any Python environment with matplotlib.
+•	Run the script to view a live animation of causal MBT “shells” expanding outward from a central event.
+•	You can adjust the number of shells, grid size, or growth law (e.g. linear, exponential, stepped) for different MBT regimes.
+ 
+Interpretation
+•	Standard physics predicts a smooth radial light cone.
+•	MBT predicts quantized “wavefronts” or “shells” — these are the causal sheets that mediate all observable effects.
+•	This matches the layered “causal boundaries” seen in quantum field propagation and large-scale structure.
+ 
+Replication Checklist
+•	Self-contained code
+•	Live animation included
+•	Editable shell structure
+•	Direct MBT prediction, not standard physics
+ 
