@@ -1,0 +1,129 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+
+# Parameters
+
+N = 32 # grid size
+
+timesteps = 150
+
+noise = 0.15 # thermal noise / temperature
+
+mag_field = 0.8 # "magnetic field" strength
+
+
+# MBT Phase field (theta), initial state = random
+
+theta = np.random.uniform(0, 2*np.pi, (N, N))
+
+vortex_memory = np.zeros_like(theta)
+
+
+# Artificial vector potential for a uniform "magnetic field"
+
+def vector_potential(x, y, B):
+
+return (0, B * x) # Landau gauge for simplicity
+
+
+# Evolve MBT phase field with synthetic field (first-principles)
+
+for t in range(timesteps):
+
+for i in range(N):
+
+for j in range(N):
+
+# Neighbors with periodic BCs
+
+ip, im = (i+1)%N, (i-1)%N
+
+jp, jm = (j+1)%N, (j-1)%N
+
+dtheta = 0
+
+# x direction (vector potential shifts phase)
+
+Ax_i, Ay_i = vector_potential(i, j, mag_field)
+
+Ax_ip, Ay_ip = vector_potential(ip, j, mag_field)
+
+dtheta += np.cos(theta[ip,j] - theta[i,j] - (Ay_ip-Ay_i))
+
+dtheta += np.cos(theta[im,j] - theta[i,j] - (Ay_i-vector_potential(im,j,mag_field)[1]))
+
+# y direction
+
+Ax_jp, Ay_jp = vector_potential(i, jp, mag_field)
+
+dtheta += np.cos(theta[i,jp] - theta[i,j] + (Ax_jp-Ax_i))
+
+dtheta += np.cos(theta[i,jm] - theta[i,j] + (Ax_i-vector_potential(i,jm,mag_field)[0]))
+
+# Update: MBT "motion" + memory
+
+theta[i,j] += 0.05*dtheta + noise*np.random.randn()
+
+vortex_memory[i,j] += np.abs(dtheta)
+
+
+# Vorticity detection (lattice curl of phase)
+
+vorticity = np.zeros_like(theta)
+
+for i in range(N):
+
+for j in range(N):
+
+ip, jp = (i+1)%N, (j+1)%N
+
+loop = (theta[i,jp] - theta[i,j] +
+
+theta[ip,jp] - theta[i,jp] +
+
+theta[ip,j] - theta[ip,jp] +
+
+theta[i,j] - theta[ip,j])
+
+vorticity[i,j] = np.sin(loop)
+
+
+# Visualization
+
+plt.figure(figsize=(14,4))
+
+
+plt.subplot(1,3,1)
+
+plt.title("Final MBT Phase Field (cos)")
+
+plt.imshow(np.cos(theta), cmap='twilight')
+
+plt.axis('off')
+
+
+plt.subplot(1,3,2)
+
+plt.title("Vortex Memory Field (MBT Order)")
+
+plt.imshow(vortex_memory, cmap='inferno')
+
+plt.axis('off')
+
+
+plt.subplot(1,3,3)
+
+plt.title("MBT Vorticity (Abrikosov Lattice)")
+
+plt.imshow(vorticity, cmap='bwr')
+
+plt.colorbar(label='Vorticity')
+
+plt.axis('off')
+
+
+plt.tight_layout()
+
+plt.show()
