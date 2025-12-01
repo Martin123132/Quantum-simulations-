@@ -1,0 +1,162 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+from scipy.integrate import trapezoid
+
+
+# --- PARAMETERS ---
+
+grid_size = 120
+
+timesteps = 180
+
+dt = 0.12
+
+width = 6
+
+r = np.linspace(0, grid_size, grid_size)
+
+dr = r[1] - r[0]
+
+
+# --- Barrier Profile ---
+
+V = np.zeros_like(r)
+
+barrier_left = (r > 50) & (r < 56) # Sharp bump
+
+barrier_right = (r > 62) & (r < 72) # Wide bump
+
+V[barrier_left] = 0.08
+
+V[barrier_right] = 0.04
+
+
+# --- Breathing dispatch seed ---
+
+def breathing_seed(center, freq, base_phase, t):
+
+phase = base_phase + 0.5 * np.sin(freq * t)
+
+return np.exp(-((r - center)**2)/(2*width**2)) * np.exp(1j * phase)
+
+
+# --- Evolution Function with Breathing Internal Seed ---
+
+def evolve_packet(x0, k0, center_seed, freq, base_phase):
+
+ψ = np.exp(-((r - x0)**2)/(2*width**2)) * np.exp(1j * k0 * r)
+
+ψ_total = []
+
+
+for t in range(timesteps):
+
+# Inject internal curvature seed with breathing phase
+
+ψ_internal = breathing_seed(center=center_seed, freq=freq, base_phase=base_phase, t=t)
+
+lap_int = np.zeros_like(ψ, dtype=complex)
+
+lap_int[1:-1] = (ψ_internal[2:] - 2*ψ_internal[1:-1] + ψ_internal[:-2]) / dr**2
+
+
+# Evolve ψ with internal curvature added
+
+lap = np.zeros_like(ψ, dtype=complex)
+
+lap[1:-1] = (ψ[2:] - 2*ψ[1:-1] + ψ[:-2]) / dr**2
+
+ψ += dt * (0.65 * lap - 0.5 * V * ψ + 0.65 * lap_int)
+
+
+# Normalize
+
+norm = np.sqrt(trapezoid(np.abs(ψ)**2, r))
+
+if norm != 0:
+
+ψ /= norm
+
+
+if t % 15 == 0:
+
+ψ_total.append(np.abs(ψ)**2)
+
+
+final = np.abs(ψ)**2
+
+T = trapezoid(final[r > 85], r[r > 85])
+
+R = trapezoid(final[r < 35], r[r < 35])
+
+return ψ_total, T, R
+
+
+# --- Run Forward (Left→Right): Favorable curvature seed ---
+
+snap_fwd, T_fwd, R_fwd = evolve_packet(x0=25, k0=1.2, center_seed=53, freq=0.06, base_phase=0)
+
+
+# --- Run Reverse (Right→Left): Phase-mismatched curvature seed ---
+
+snap_rev, T_rev, R_rev = evolve_packet(x0=95, k0=-1.2, center_seed=67, freq=0.06, base_phase=np.pi/2)
+
+
+# --- Plot Results ---
+
+fig, axs = plt.subplots(2, 2, figsize=(15,8))
+
+
+# Forward evolution
+
+for ψs in snap_fwd:
+
+axs[0,0].plot(r, ψs, alpha=0.5)
+
+axs[0,0].plot(r, V / np.max(V) * np.max([np.max(p) for p in snap_fwd]), 'k--', lw=2, label='Barrier')
+
+axs[0,0].set_title("Breathing Diode: Forward (Left→Right)")
+
+axs[0,0].legend()
+
+
+# Reverse evolution
+
+for ψs in snap_rev:
+
+axs[0,1].plot(r, ψs, alpha=0.5)
+
+axs[0,1].plot(r, V / np.max(V) * np.max([np.max(p) for p in snap_rev]), 'k--', lw=2, label='Barrier')
+
+axs[0,1].set_title("Breathing Diode: Reverse (Right→Left)")
+
+axs[0,1].legend()
+
+
+# Transmission bars
+
+axs[1,0].bar(['→Forward', '←Reverse'], [T_fwd, T_rev], color=['lightgreen', 'lightblue'])
+
+axs[1,0].set_ylim(0, 1)
+
+axs[1,0].set_ylabel("Transmission Probability")
+
+axs[1,0].set_title("Directional Dispatch Tunneling")
+
+
+# Reflection bars
+
+axs[1,1].bar(['→Forward', '←Reverse'], [R_fwd, R_rev], color=['gold', 'red'])
+
+axs[1,1].set_ylim(0, 1)
+
+axs[1,1].set_ylabel("Reflection Probability")
+
+axs[1,1].set_title("Directional Dispatch Reflection")
+
+
+plt.tight_layout()
+
+plt.show()
