@@ -1,0 +1,56 @@
+MBT 3D Quantized Vortex Simulation – 20 Particles
+
+This simulation demonstrates 20 particles within an MBT-aligned quantized vortex curvature field.
+Particles follow curved, stable, self-organizing orbits that form layered structures resembling
+quantized energy shells or galactic rings — without any reliance on mass-based attraction.
+
+Python Simulation Code
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# MBT 3D quantized vortex field
+def mbt_quantized_vortex_field(x, y, z):
+    r = np.sqrt(x**2 + y**2 + z**2) + 1e-5
+    quantized_r = np.round(r)
+    fx = -(x - quantized_r * x/r) / (r**2 + 1e-2)
+    fy = -(y - quantized_r * y/r) / (r**2 + 1e-2)
+    fz = -(z - quantized_r * z/r) * 0.05
+    return fx, fy, fz
+
+# Initialize multiple particles
+num_particles = 20
+positions = np.random.uniform(-5, 5, (num_particles, 3))
+velocities = np.random.normal(0, 0.5, (num_particles, 3))
+
+dt = 0.02
+damping = 0.995
+energy_input = 0.002
+
+trajectories = [[pos.copy()] for pos in positions]
+
+# Simulation
+for _ in range(1000):
+    for i in range(num_particles):
+        x, y, z = positions[i]
+        fx, fy, fz = mbt_quantized_vortex_field(x, y, z)
+        force = np.array([fx, fy, fz])
+        velocities[i] = velocities[i] * damping + force * dt + np.random.normal(0, energy_input, 3)
+        positions[i] += velocities[i] * dt
+        trajectories[i].append(positions[i].copy())
+
+# Plotting
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+colors = plt.cm.viridis(np.linspace(0, 1, num_particles))
+for i in range(num_particles):
+    traj = np.array(trajectories[i])
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color=colors[i])
+
+ax.set_title("MBT 3D Quantized Vortex – 20 Particle System")
+ax.set_xlabel("X")
+ax.set_ylabel("Y")
+ax.set_zlabel("Z")
+plt.show()
