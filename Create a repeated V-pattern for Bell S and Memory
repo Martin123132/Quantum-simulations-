@@ -1,0 +1,84 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+
+cycles = 5
+
+steps_per_cycle = 100
+
+total_steps = cycles * steps_per_cycle
+
+time = np.arange(total_steps)
+
+S_quantum = 2.828
+
+S_classical = 2.0
+
+
+# Create a repeated V-pattern for Bell S and Memory
+
+S_mbt = np.zeros(total_steps)
+
+memory_mbt = np.zeros(total_steps)
+
+noise_level = 0.12 # tweak this for roughness
+
+
+for c in range(cycles):
+
+t0 = c * steps_per_cycle
+
+t1 = t0 + steps_per_cycle // 2
+
+t2 = t0 + steps_per_cycle
+
+S_mbt[t0:t1] = np.linspace(S_quantum, S_classical, steps_per_cycle // 2)
+
+S_mbt[t1:t2] = np.linspace(S_classical, S_quantum, steps_per_cycle // 2)
+
+memory_mbt[t0:t1] = np.linspace(1.0, 0.0, steps_per_cycle // 2)
+
+memory_mbt[t1:t2] = np.linspace(0.0, 1.0, steps_per_cycle // 2)
+
+
+# Add a little noise to both
+
+np.random.seed(1)
+
+S_noisy = S_mbt + np.random.normal(0, noise_level, total_steps)
+
+memory_noisy = memory_mbt + np.random.normal(0, noise_level, total_steps)
+
+
+# Plot
+
+fig, ax1 = plt.subplots(figsize=(10,5))
+
+ax1.plot(time, S_noisy, label='Bell S (MBT, Noisy)', color='dodgerblue')
+
+ax1.axhline(S_quantum, color='purple', linestyle='--', label='Quantum Limit')
+
+ax1.axhline(S_classical, color='gray', linestyle='--', label='Classical Limit')
+
+ax1.set_ylabel('Order Parameter (S)', color='dodgerblue')
+
+ax1.set_xlabel('Time (Repeated Collapse/Healing Cycles)')
+
+ax2 = ax1.twinx()
+
+ax2.plot(time, memory_noisy, label='MBT Memory (Noisy)', color='limegreen')
+
+ax2.set_ylabel('MBT Memory', color='limegreen')
+
+fig.suptitle("Repeated Quantum Collapse–Recovery Cycles (MBT: Order & Memory)")
+
+lines_1, labels_1 = ax1.get_legend_handles_labels()
+
+lines_2, labels_2 = ax2.get_legend_handles_labels()
+
+ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper right')
+
+plt.tight_layout()
+
+plt.show()
