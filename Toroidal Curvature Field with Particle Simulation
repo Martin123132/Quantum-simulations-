@@ -1,0 +1,61 @@
+MBT Toroidal Curvature Field with Particle Simulation
+
+This simulation demonstrates particle motion in a toroidal MBT-aligned curvature field using the principles of the Motion = Being Theory (MBT).
+Particles move not due to classical forces, but because spacetime curvature shapes the path of least resistance to motion. 
+
+Python Code
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# Define 3D grid
+x = y = z = np.linspace(-5, 5, 20)
+X, Y, Z = np.meshgrid(x, y, z)
+
+# MBT-inspired toroidal curvature velocity field (vortex-like)
+U = -Y / (np.sqrt(X**2 + Y**2 + 1)) + 0.1 * np.sin(Z)
+V = X / (np.sqrt(X**2 + Y**2 + 1)) + 0.1 * np.cos(Z)
+W = np.sin(np.sqrt(X**2 + Y**2)) * 0.1
+
+# Normalize vector field
+mag = np.sqrt(U**2 + V**2 + W**2)
+U, V, W = U / mag, V / mag, W / mag
+
+# Initialize particles
+num_particles = 10
+particle_pos = np.random.uniform(-2, 2, size=(num_particles, 3))
+trajectories = [[] for _ in range(num_particles)]
+
+# Simulate motion over toroidal field
+steps = 100
+dt = 0.1
+for _ in range(steps):
+    for i, pos in enumerate(particle_pos):
+        xi, yi, zi = pos
+        xi_idx = np.clip(((xi + 5) / 10 * 19).astype(int), 0, 19)
+        yi_idx = np.clip(((yi + 5) / 10 * 19).astype(int), 0, 19)
+        zi_idx = np.clip(((zi + 5) / 10 * 19).astype(int), 0, 19)
+
+        vx = U[yi_idx, xi_idx, zi_idx]
+        vy = V[yi_idx, xi_idx, zi_idx]
+        vz = W[yi_idx, xi_idx, zi_idx]
+
+        pos += dt * np.array([vx, vy, vz])
+        trajectories[i].append(pos.copy())
+
+# Plot particle paths
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+colors = plt.cm.viridis(np.linspace(0, 1, num_particles))
+
+for i, path in enumerate(trajectories):
+    path = np.array(path)
+    ax.plot(path[:, 0], path[:, 1], path[:, 2], color=colors[i], label=f"Particle {i}")
+
+ax.set_title("MBT Toroidal Curvature Field - Particle Motion")
+ax.set_xlabel("X")
+ax.set_ylabel("Y")
+ax.set_zlabel("Z")
+plt.tight_layout()
+plt.show()
