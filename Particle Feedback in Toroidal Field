@@ -1,0 +1,48 @@
+MBT Curvature Field – Recent Simulations
+MBT Particle Feedback in Toroidal Field
+This simulation introduced local feedback from particle motion into a toroidal MBT-aligned curvature field.
+Code Snippet:
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def mbt_curvature_field(x, y, field_x, field_y):
+    r = np.sqrt(x**2 + y**2)
+    fx = -y / (r**2 + 1e-3)
+    fy = x / (r**2 + 1e-3)
+    if r < 1:
+        fx = 0
+        fy = 0
+    fx += field_x[int(y)+50, int(x)+50] * 0.1
+    fy += field_y[int(y)+50, int(x)+50] * 0.1
+    return fx, fy
+
+MBT Particle Path in Expanded Curvature Field
+Expanded field grid with higher density streamlines. This verified directional particle deflection with feedback mechanisms.
+Code Snippet:
+
+x = np.linspace(-20, 20, 100)
+y = np.linspace(-20, 20, 100)
+X, Y = np.meshgrid(x, y)
+R = np.sqrt(X**2 + Y**2)
+U = -Y / (R**2 + 1e-3)
+V = X / (R**2 + 1e-3)
+
+# Normalize
+mag = np.sqrt(U**2 + V**2)
+U /= mag
+V /= mag
+
+plt.streamplot(X, Y, U, V, color='purple')
+
+MBT Central Attractor Field with Toroidal Influence
+Simulates electron-like particle path bending from edge toward center under MBT-based curvature. Central tension mimics nucleus attraction.
+Code Snippet:
+
+def mbt_combined_field(x, y):
+    r = np.sqrt(x**2 + y**2)
+    fx = -y / (r**2 + 1e-3) - x / (r + 1e-3)
+    fy = x / (r**2 + 1e-3) - y / (r + 1e-3)
+    return fx, fy
+
+# Particle simulation loop follows the curvature over time steps
