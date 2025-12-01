@@ -1,0 +1,51 @@
+MBT Outer Shell Particle Trajectory – Continued Evolution
+This document continues the MBT-based particle simulation series by evolving the field interaction further. This version incorporates deeper curvature layering to simulate the outer shell of an MBT-based atomic structure, where rotational resistance deflects incoming particle paths inwards in a controlled arc.
+Python Code
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# MBT-aligned curvature field (toroidal shell region)
+def mbt_curvature_field(x, y):
+    r = np.sqrt(x**2 + y**2)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        fx = -y / (r**2 + 1e-3)
+        fy = x / (r**2 + 1e-3)
+    fx[r < 1] = 0
+    fy[r < 1] = 0
+    return fx, fy
+
+# Grid setup
+x = np.linspace(-5, 5, 50)
+y = np.linspace(-5, 5, 50)
+X, Y = np.meshgrid(x, y)
+FX, FY = mbt_curvature_field(X, Y)
+
+# Particle initialization
+px, py = -4.5, 0
+vx, vy = 0.1, 0.05
+trajectory_x = [px]
+trajectory_y = [py]
+
+# Simulation
+for _ in range(500):
+    fx, fy = mbt_curvature_field(px, py)
+    vx += fx * 0.01
+    vy += fy * 0.01
+    px += vx * 0.05
+    py += vy * 0.05
+    trajectory_x.append(px)
+    trajectory_y.append(py)
+
+# Plot
+plt.figure(figsize=(8, 6))
+plt.streamplot(X, Y, FX, FY, color='purple', density=1.2)
+plt.plot(trajectory_x, trajectory_y, color='cyan', linewidth=2, label='Particle Path')
+plt.plot(trajectory_x[-1], trajectory_y[-1], 'rx', label='Final Position', markersize=10)
+plt.title('MBT Outer Shell Curvature: Particle Deflection')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend()
+plt.grid(True)
+plt.axis('equal')
+plt.show()
