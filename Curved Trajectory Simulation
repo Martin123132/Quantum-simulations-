@@ -1,0 +1,38 @@
+MBT Curved Trajectory Simulation
+This document contains the full code and explanation for simulating a particle trajectory through an aligned curvature field that produces a curved path due to underlying spacetime resistance.
+Python Code:
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define toroidal MBT curvature field
+x = np.linspace(-5, 5, 40)
+y = np.linspace(-5, 5, 40)
+X, Y = np.meshgrid(x, y)
+U = -Y / (X**2 + Y**2 + 1)
+V = X / (X**2 + Y**2 + 1)
+
+# Simulate particle trajectory
+pos = np.array([0.5, 0.0])
+trajectory = [pos.copy()]
+dt = 0.1
+for _ in range(100):
+    i = np.argmin(np.abs(x - pos[0]))
+    j = np.argmin(np.abs(y - pos[1]))
+    vx = U[j, i]
+    vy = V[j, i]
+    pos += dt * np.array([vx, vy])
+    trajectory.append(pos.copy())
+trajectory = np.array(trajectory)
+
+# Plotting
+plt.figure(figsize=(8, 8))
+plt.streamplot(X, Y, U, V, color='purple', density=1.5)
+plt.plot(trajectory[:,0], trajectory[:,1], color='white', linewidth=2, label='Particle Trajectory')
+plt.plot(trajectory[-1,0], trajectory[-1,1], 'rx', markersize=10, label='Final Position')
+plt.title("MBT Particle Trajectory in Toroidal Curvature Field")
+plt.xlabel("X-axis")
+plt.ylabel("Y-axis")
+plt.grid(True)
+plt.legend()
+plt.show()
