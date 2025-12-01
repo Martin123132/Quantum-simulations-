@@ -1,0 +1,38 @@
+MBT Atomic Standing Wave Pattern Code
+This document contains the code used to generate the MBT-based spherical atomic structure with standing waves.
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 3D MBT-style radial wave resonance simulation
+
+# Create spherical coordinates
+grid_size = 150
+x = np.linspace(-1, 1, grid_size)
+y = np.linspace(-1, 1, grid_size)
+z = np.linspace(-1, 1, grid_size)
+X, Y, Z = np.meshgrid(x, y, z)
+R = np.sqrt(X**2 + Y**2 + Z**2)
+
+# MBT-inspired spherical standing wave function
+def mbt_field(r, n=6):
+    with np.errstate(divide='ignore', invalid='ignore'):
+        wave = np.sin(2 * np.pi * n * r) / (r + 1e-6)  # Avoid division by zero
+        wave[r == 0] = 1  # define center value
+    return wave
+
+# Compute field
+field = mbt_field(R)
+
+# Take a central 2D slice for visualization
+slice_2d = field[:, :, grid_size // 2]
+
+# Plot
+plt.figure(figsize=(6, 6))
+plt.imshow(slice_2d, cmap='inferno', extent=[-1, 1, -1, 1])
+plt.title('MBT-Based Atomic Standing Wave Pattern (Central Slice)')
+plt.xlabel('X axis')
+plt.ylabel('Y axis')
+plt.colorbar(label='Wave Amplitude')
+plt.tight_layout()
+plt.show()
