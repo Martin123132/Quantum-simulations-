@@ -1,0 +1,50 @@
+MBT Curvature Field Simulation Codes
+MBT  Curvature Field – Initial Atom Structure
+This code sets up a basic 3D vector field using MBT curvature principles and visualizes the nucleus-centered structure.
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define grid
+x = np.linspace(-5, 5, 20)
+y = np.linspace(-5, 5, 20)
+z = np.linspace(-5, 5, 20)
+X, Y, Z = np.meshgrid(x, y, z)
+
+# Define MBT-inspired vector field
+R = np.sqrt(X**2 + Y**2 + Z**2) + 1e-6
+U = -Y / R**2
+V = X / R**2
+W = -Z / R**2
+
+# Plotting using quiver
+fig = plt.figure(figsize=(10, 7))
+ax = fig.add_subplot(111, projection='3d')
+ax.quiver(X, Y, Z, U, V, W, length=0.3, normalize=True)
+ax.set_title("MBT Curvature Field: Nucleus-like Structure")
+plt.show()
+        
+MBT 3D Curvature Field – Expanded Evolution
+This script enhances the MBT atom simulation by increasing resolution and field complexity.
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Higher resolution grid
+x = np.linspace(-5, 5, 25)
+y = np.linspace(-5, 5, 25)
+z = np.linspace(-5, 5, 25)
+X, Y, Z = np.meshgrid(x, y, z)
+
+# MBT dynamic field refinement
+R = np.sqrt(X**2 + Y**2 + Z**2) + 1e-6
+U = (Y*Z) / R**3
+V = (-X*Z) / R**3
+W = (X*Y) / R**3
+
+fig = plt.figure(figsize=(10, 7))
+ax = fig.add_subplot(111, projection='3d')
+ax.quiver(X, Y, Z, U, V, W, length=0.3, normalize=True)
+ax.set_title("Evolved MBT 3D Curvature Field (Toroidal Dynamics)")
+plt.show()
+        
