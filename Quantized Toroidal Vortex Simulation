@@ -1,0 +1,58 @@
+MBT Quantized Toroidal Vortex Simulation
+This simulation models a Motion = Being Theory (MBT) aligned quantized vortex system. Twelve particles are initialized around a quantized shell in 3D space, demonstrating how motion resistance structures naturally form orbital bands without relying on mass or classical forces. This configuration uses a toroidal curvature field that creates layers of resistance (quantized shells), guiding particle trajectories into coherent orbital structures.
+Python Simulation Code
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# Quantized MBT vortex field
+def mbt_quantized_vortex_field(x, y, z):
+    r = np.sqrt(x**2 + y**2 + z**2) + 1e-5
+    r_quantized = np.round(r)
+    fx = -(x - r_quantized * x / r) / (r + 1e-2)
+    fy = -(y - r_quantized * y / r) / (r + 1e-2)
+    fz = -(z - r_quantized * z / r) / (r + 1e-2)
+    return fx, fy, fz
+
+# Initialize 12 particles on a circular shell
+num_particles = 12
+theta = np.linspace(0, 2*np.pi, num_particles, endpoint=False)
+positions = np.stack([3*np.cos(theta), 3*np.sin(theta), np.zeros_like(theta)], axis=1)
+velocities = np.stack([-0.3*np.sin(theta), 0.3*np.cos(theta), np.zeros_like(theta)], axis=1)
+
+dt = 0.02
+damping = 0.99
+steps = 800
+trajectories = [[pos.copy()] for pos in positions]
+
+for _ in range(steps):
+    for i in range(num_particles):
+        x, y, z = positions[i]
+        fx, fy, fz = mbt_quantized_vortex_field(x, y, z)
+        velocities[i] = velocities[i] * damping + np.array([fx, fy, fz]) * dt
+        positions[i] += velocities[i] * dt
+        trajectories[i].append(positions[i].copy())
+
+# Plotting
+fig = plt.figure(figsize=(8,8))
+ax = fig.add_subplot(111, projection='3d')
+colors = plt.cm.hsv(np.linspace(0, 1, num_particles))
+
+for i in range(num_particles):
+    traj = np.array(trajectories[i])
+    ax.plot(traj[:,0], traj[:,1], traj[:,2], color=colors[i])
+
+# Add quantized shell layers
+for radius in range(1, 5):
+    u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+    xs = radius * np.cos(u) * np.sin(v)
+    ys = radius * np.sin(u) * np.sin(v)
+    zs = radius * np.cos(v)
+    ax.plot_surface(xs, ys, zs, color='cyan', alpha=0.05)
+
+ax.set_title('MBT 3D Vortex: Multi-Particle Quantized Orbits')
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+plt.show()
