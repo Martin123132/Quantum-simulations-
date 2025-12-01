@@ -1,0 +1,56 @@
+MBT Atomic Simulation Code
+This document contains the full code for the MBT-based atomic structure simulation, including curvature field setup, particle initialization, 3D visualization, and time evolution. The simulation models particles moving under spacetime resistance curvature (MBT) without force equations.
+1. Imports and Setup
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+2. Initialize MBT Curvature Field
+
+grid_size = 50
+curvature = np.zeros((grid_size, grid_size, grid_size))
+center = grid_size // 2
+for x in range(grid_size):
+    for y in range(grid_size):
+        for z in range(grid_size):
+            r = np.sqrt((x - center)**2 + (y - center)**2 + (z - center)**2) + 1e-5
+            curvature[x, y, z] = 1 / r**2
+
+3. Particle Initialization
+
+pos = np.array([center + 5, center, center], dtype=float)
+vel = np.array([0, 1.5, 0], dtype=float)  # Initial orbital velocity
+positions = [pos.copy()]
+
+4. MBT Velocity Update Function
+
+def get_curvature_gradient(pos, curvature):
+    x, y, z = np.round(pos).astype(int)
+    if not (1 <= x < grid_size - 1 and 1 <= y < grid_size - 1 and 1 <= z < grid_size - 1):
+        return np.zeros(3)
+    gx = curvature[x+1, y, z] - curvature[x-1, y, z]
+    gy = curvature[x, y+1, z] - curvature[x, y-1, z]
+    gz = curvature[x, y, z+1] - curvature[x, y, z-1]
+    return -np.array([gx, gy, gz])  # Negative gradient
+
+5. Time Evolution Loop
+
+dt = 0.1
+for step in range(500):
+    grad = get_curvature_gradient(pos, curvature)
+    vel += grad * dt
+    pos += vel * dt
+    positions.append(pos.copy())
+
+6. 3D Visualization
+
+positions = np.array(positions)
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+ax.plot3D(positions[:, 0], positions[:, 1], positions[:, 2], color='blue')
+ax.set_title('MBT-Based Particle Orbit Around Nucleus')
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+plt.show()
