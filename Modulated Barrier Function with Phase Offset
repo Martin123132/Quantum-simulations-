@@ -1,0 +1,171 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+from scipy.integrate import trapezoid
+
+
+# --- Parameters ---
+
+grid_size = 120
+
+timesteps = 180
+
+dt = 0.12
+
+width = 6
+
+r = np.linspace(0, grid_size, grid_size)
+
+dr = r[1] - r[0]
+
+
+# --- Barrier Parameters ---
+
+barrier_center = 60
+
+barrier_width = 6
+
+barrier_base_height = 0.07
+
+barrier_amplitude = 0.045
+
+barrier_freq = 0.08
+
+barrier_phase_offset = 0.0 # ← modify to test offset
+
+
+# --- Breathing Seed Function ---
+
+def breathing_seed(center, freq, base_phase, t):
+
+phase = base_phase + 0.5 * np.sin(freq * t)
+
+return np.exp(-((r - center)**2)/(2 * width**2)) * np.exp(1j * phase)
+
+
+# --- Modulated Barrier Function with Phase Offset ---
+
+def breathing_barrier(t, freq, phase_offset):
+
+modulation = np.sin(freq * t + phase_offset)
+
+height = barrier_base_height + barrier_amplitude * modulation
+
+V = np.zeros_like(r)
+
+V[(r > barrier_center - barrier_width/2) & (r < barrier_center + barrier_width/2)] = height
+
+return V
+
+
+# --- Evolution Function ---
+
+def evolve_offset_phase(x0, k0, seed_center, seed_base_phase, seed_freq, barrier_phase_offset):
+
+ψ = np.exp(-((r - x0)**2)/(2 * width**2)) * np.exp(1j * k0 * r)
+
+ψ_total = []
+
+barrier_profiles = []
+
+
+for t in range(timesteps):
+
+V = breathing_barrier(t, barrier_freq, barrier_phase_offset)
+
+barrier_profiles.append(V.copy())
+
+
+ψ_internal = breathing_seed(seed_center, seed_freq, seed_base_phase, t)
+
+lap_int = np.zeros_like(ψ, dtype=complex)
+
+lap_int[1:-1] = (ψ_internal[2:] - 2 * ψ_internal[1:-1] + ψ_internal[:-2]) / dr**2
+
+
+lap_ψ = np.zeros_like(ψ, dtype=complex)
+
+lap_ψ[1:-1] = (ψ[2:] - 2 * ψ[1:-1] + ψ[:-2]) / dr**2
+
+ψ += dt * (0.65 * lap_ψ - 0.5 * V * ψ + 0.65 * lap_int)
+
+
+norm = np.sqrt(trapezoid(np.abs(ψ)**2, r))
+
+if norm != 0:
+
+ψ /= norm
+
+if t % 18 == 0:
+
+ψ_total.append(np.abs(ψ)**2)
+
+
+final = np.abs(ψ)**2
+
+T = trapezoid(final[r > (barrier_center + barrier_width)], r[r > (barrier_center + barrier_width)])
+
+R = trapezoid(final[r < (barrier_center - barrier_width)], r[r < (barrier_center - barrier_width)])
+
+return ψ_total, barrier_profiles, T, R
+
+
+# --- Run with Phase Offset ---
+
+snapshots, barrier_profiles, T, R = evolve_offset_phase(
+
+x0=25, k0=1.25,
+
+seed_center=barrier_center,
+
+seed_base_phase=0,
+
+seed_freq=0.08,
+
+barrier_phase_offset=np.pi / 4 # ← try π/4 or π/2
+
+)
+
+
+# --- Plot Results ---
+
+fig, axs = plt.subplots(2, 1, figsize=(14, 8))
+
+
+# Evolution snapshots
+
+for ψs in snapshots:
+
+axs[0].plot(r, ψs, alpha=0.5)
+
+# Barrier overlays
+
+snap_indices = np.linspace(0, timesteps - 1, len(snapshots)).astype(int)
+
+for i, idx in enumerate(snap_indices):
+
+V = barrier_profiles[idx]
+
+axs[0].plot(r, V / 0.08 * np.max([np.max(p) for p in snapshots]), 'k--', alpha=0.15)
+
+
+axs[0].set_title("Phase-Offset Dispatch Interaction")
+
+axs[0].set_ylabel("Probability Density")
+
+
+# Transmission and Reflection
+
+axs[1].bar(['Transmission', 'Reflection'], [T, R], color=['lightgreen', 'orange'])
+
+axs[1].set_ylim(0, 1)
+
+axs[1].set_ylabel("Probability")
+
+axs[1].set_title("Dispatch Response at Phase Offset π⁄4")
+
+
+plt.tight_layout()
+
+plt.show()
