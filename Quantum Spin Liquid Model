@@ -1,0 +1,52 @@
+MBT Quantum Spin Liquid Model
+1. Lattice & Variables
+
+We consider a lattice 𝓛 of N spin sites indexed by i. Each site has:
+- Spin orientation: Sᵢ ∈ ℝ³ (unit vector, |Sᵢ| = 1).
+- Observation entanglement field: ψᵢⱼ ∈ [0,1] between sites i and j.
+- Coherence collapse: Cᵢⱼ ∈ [0,1], representing local entropy or memory loss.
+- Sheet curvature: κ ∈ ℝ, representing MBT spacetime tension.
+
+2. Hamiltonian
+
+We define the MBT Hamiltonian:
+
+Hₘᵦₜ = J Σ⟨i,j⟩ (Sᵢ · Sⱼ)(1 - Cᵢⱼ) + λ Σᵢⱼ ψᵢⱼ Sᵢ · Sⱼ + μ κ²
+
+Where:
+- J is the nearest-neighbor exchange constant.
+- λ controls long-range MBT observation entanglement.
+- μ controls curvature tension energy.
+
+3. Order Parameters
+
+1. Classical Spin Correlation:
+    M = (1/N) Σᵢⱼ Sᵢ · Sⱼ
+
+2. MBT Entanglement Memory:
+    Ψ = (1/N) Σᵢⱼ ψᵢⱼ
+
+3. Curvature Energy:
+    K = μ κ²
+
+Quantum Spin Liquid Criterion (MBT):
+    M → 0 and Ψ > 0
+
+4. Memory Persistence Law Link
+
+We integrate MBT’s memory persistence:
+
+M(x,t) = (1 - C(x,t)) [ P(x,t) + γ ∂²T(x,t)/∂x² ]
+
+Here, P represents local spin presence intensity and T captures transmissibility of entanglement echoes.
+
+In spin lattice form:
+    Ψ ∼ M = (1 - C) P cₑₒcₕₒ²
+
+This ensures QSL long-range order is memory-driven rather than magnetically ordered.
+
+5. Takeaway
+
+- MBT treats QSL phases as high-memory / low-classical-order states.
+- Long-range entanglement is a result of observation connectivity (ψ) and sheet curvature (κ).
+- Coherence collapse (C) dynamically competes, driving quantum disordered but memory-persistent phases.
