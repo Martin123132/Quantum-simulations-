@@ -1,0 +1,114 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+
+# Parameters
+
+N = 5000 # Number of trials (big enough for smooth stats)
+
+theta_A = 0 # Measurement setting A (angle, radians)
+
+theta_Ap = np.pi/4 # A'
+
+theta_B = np.pi/8 # B
+
+theta_Bp = 3*np.pi/8 # B'
+
+
+def mbt_hidden_phase():
+
+"""Generate a shared field 'phase' as MBT would (here: truly random for test, but could use memory field)."""
+
+return np.random.uniform(0, 2*np.pi)
+
+
+def measure(phase, theta):
+
+"""Returns +1 or -1 depending on alignment of field phase and measurement angle."""
+
+return 1 if np.cos(phase - theta) > 0 else -1
+
+
+# Run Bell/CHSH test
+
+def run_bell(N, angles):
+
+"""Run the full set of Bell tests for all settings."""
+
+results = {k: [] for k in ['AB', 'ABp', 'ApB', 'ApBp']}
+
+for _ in range(N):
+
+phi = mbt_hidden_phase() # Shared memory/phase
+
+# All measurement settings
+
+A = measure(phi, angles['A'])
+
+Ap = measure(phi, angles['Ap'])
+
+B = measure(phi, angles['B'])
+
+Bp = measure(phi, angles['Bp'])
+
+results['AB'].append(A*B)
+
+results['ABp'].append(A*Bp)
+
+results['ApB'].append(Ap*B)
+
+results['ApBp'].append(Ap*Bp)
+
+return results
+
+
+angles = {'A': theta_A, 'Ap': theta_Ap, 'B': theta_B, 'Bp': theta_Bp}
+
+res = run_bell(N, angles)
+
+
+# Compute averages (correlation for each setting)
+
+E_AB = np.mean(res['AB'])
+
+E_ABp = np.mean(res['ABp'])
+
+E_ApB = np.mean(res['ApB'])
+
+E_ApBp = np.mean(res['ApBp'])
+
+
+# Bell-CHSH parameter
+
+S = abs(E_AB - E_ABp + E_ApB + E_ApBp)
+
+print(f"Bell-CHSH S = {S:.3f}")
+
+print("(Classical limit = 2.0, Quantum max = 2.828)")
+
+
+# Plot the correlation as function of angle
+
+angles_list = np.linspace(0, np.pi, 100)
+
+corrs = [np.mean([measure(mbt_hidden_phase(), 0)*measure(mbt_hidden_phase(), th) for _ in range(200)]) for th in angles_list]
+
+
+plt.figure(figsize=(7,4))
+
+plt.plot(angles_list*180/np.pi, corrs, label='MBT Field Correlation')
+
+plt.axhline(0, color='gray', lw=0.8)
+
+plt.xlabel('Angle between detectors (degrees)')
+
+plt.ylabel('Correlation')
+
+plt.title('MBT Bell Test Correlation vs. Angle')
+
+plt.legend()
+
+plt.tight_layout()
+
+plt.show()
