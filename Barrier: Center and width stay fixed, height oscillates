@@ -1,0 +1,154 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+from scipy.integrate import trapezoid
+
+
+# --- Parameters ---
+
+grid_size = 120
+
+timesteps = 180
+
+dt = 0.12
+
+width = 6
+
+r = np.linspace(0, grid_size, grid_size)
+
+dr = r[1] - r[0]
+
+
+# --- Barrier: Center and width stay fixed, height oscillates ---
+
+barrier_center = 60
+
+barrier_width = 6
+
+barrier_base_height = 0.07
+
+barrier_amplitude = 0.045 # Oscillation amplitude
+
+barrier_freq = 0.08 # Oscillation frequency (rad/step)
+
+
+# --- MBT Breathing Seed Function ---
+
+def breathing_seed(center, freq, base_phase, t):
+
+phase = base_phase + 0.5 * np.sin(freq * t)
+
+return np.exp(-((r - center)**2)/(2*width**2)) * np.exp(1j * phase)
+
+
+# --- Evolution Function ---
+
+def evolve_packet(x0, k0, seed_center, seed_base_phase, seed_freq):
+
+ψ = np.exp(-((r - x0)**2)/(2*width**2)) * np.exp(1j * k0 * r)
+
+ψ_total = []
+
+barrier_profiles = []
+
+
+for t in range(timesteps):
+
+# Oscillating barrier height
+
+barrier_height = barrier_base_height + barrier_amplitude * np.sin(barrier_freq * t)
+
+V = np.zeros_like(r)
+
+V[(r > barrier_center - barrier_width/2) & (r < barrier_center + barrier_width/2)] = barrier_height
+
+barrier_profiles.append(V.copy())
+
+
+# MBT breathing seed (internal curvature)
+
+ψ_internal = breathing_seed(seed_center, seed_freq, seed_base_phase, t)
+
+lap_int = np.zeros_like(ψ, dtype=complex)
+
+lap_int[1:-1] = (ψ_internal[2:] - 2*ψ_internal[1:-1] + ψ_internal[:-2]) / dr**2
+
+
+lap_ψ = np.zeros_like(ψ, dtype=complex)
+
+lap_ψ[1:-1] = (ψ[2:] - 2*ψ[1:-1] + ψ[:-2]) / dr**2
+
+ψ += dt * (0.65 * lap_ψ - 0.5 * V * ψ + 0.65 * lap_int)
+
+
+norm = np.sqrt(trapezoid(np.abs(ψ)**2, r))
+
+if norm != 0:
+
+ψ /= norm
+
+if t % 18 == 0:
+
+ψ_total.append(np.abs(ψ)**2)
+
+
+final = np.abs(ψ)**2
+
+T = trapezoid(final[r > (barrier_center + barrier_width)], r[r > (barrier_center + barrier_width)])
+
+R = trapezoid(final[r < (barrier_center - barrier_width)], r[r < (barrier_center - barrier_width)])
+
+return ψ_total, barrier_profiles, T, R
+
+
+# --- Run experiment ---
+
+snapshots, barrier_profiles, T, R = evolve_packet(
+
+x0=25, k0=1.25, seed_center=barrier_center, seed_base_phase=0, seed_freq=0.07
+
+)
+
+
+# --- Plot Results ---
+
+fig, axs = plt.subplots(2, 1, figsize=(14,8))
+
+
+# Evolution plot
+
+for i, ψs in enumerate(snapshots):
+
+axs[0].plot(r, ψs, alpha=0.5)
+
+# Plot oscillating barrier at each snapshot
+
+snap_indices = np.linspace(0, timesteps-1, len(snapshots)).astype(int)
+
+for i, idx in enumerate(snap_indices):
+
+V = barrier_profiles[idx]
+
+axs[0].plot(r, V / np.max([np.max(s) for s in snapshots]) * np.max([np.max(s) for s in snapshots]), 'k--', alpha=0.15)
+
+
+axs[0].set_title("MBT Dispatch Tunneling with Breathing Barrier")
+
+axs[0].set_ylabel("Probability Density")
+
+
+# Final transmission/reflection bar
+
+axs[1].bar(['Transmission', 'Reflection'], [T, R], color=['lightgreen', 'gold'])
+
+axs[1].set_ylim(0, 1)
+
+axs[1].set_ylabel("Probability")
+
+axs[1].set_title("Final Probabilities")
+
+
+plt.tight_layout()
+
+plt.show()
