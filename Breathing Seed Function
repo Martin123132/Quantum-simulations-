@@ -1,0 +1,142 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+from scipy.integrate import trapezoid
+
+
+# --- Grid and Parameters ---
+
+grid_size = 120
+
+timesteps = 180
+
+dt = 0.12
+
+width = 6
+
+r = np.linspace(0, grid_size, grid_size)
+
+dr = r[1] - r[0]
+
+
+# --- Breathing Seed Function ---
+
+def breathing_seed(center, freq, base_phase, t):
+
+phase = base_phase + 0.5 * np.sin(freq * t)
+
+return np.exp(-((r - center)**2)/(2 * width**2)) * np.exp(1j * phase)
+
+
+# --- Oscillating Barrier Function ---
+
+def modulated_barrier(t, freq, base_amp=0.08, secondary_amp=0.04):
+
+modulation = 0.5 + 0.5 * np.sin(freq * t) # Ranges from 0 to 1
+
+V = np.zeros_like(r)
+
+V[(r > 50) & (r < 56)] = base_amp * modulation # Left bump breathes
+
+V[(r > 62) & (r < 72)] = secondary_amp * (1 - modulation) # Right bump anti-breathes
+
+return V
+
+
+# --- Evolution Function ---
+
+def evolve_resonant(seed_center=67, x0=95, k0=-1.2, freq=0.06, base_phase=np.pi):
+
+ψ = np.exp(-((r - x0)**2)/(2 * width**2)) * np.exp(1j * k0 * r)
+
+ψ_total = []
+
+
+for t in range(timesteps):
+
+ψ_internal = breathing_seed(seed_center, freq, base_phase, t)
+
+V = modulated_barrier(t, freq) # Oscillating barrier in sync
+
+
+lap_int = np.zeros_like(ψ, dtype=complex)
+
+lap_int[1:-1] = (ψ_internal[2:] - 2 * ψ_internal[1:-1] + ψ_internal[:-2]) / dr**2
+
+
+lap_ψ = np.zeros_like(ψ, dtype=complex)
+
+lap_ψ[1:-1] = (ψ[2:] - 2 * ψ[1:-1] + ψ[:-2]) / dr**2
+
+ψ += dt * (0.65 * lap_ψ - 0.5 * V * ψ + 0.65 * lap_int)
+
+
+norm = np.sqrt(trapezoid(np.abs(ψ)**2, r))
+
+if norm != 0:
+
+ψ /= norm
+
+if t % 15 == 0:
+
+ψ_total.append(np.abs(ψ)**2)
+
+
+final = np.abs(ψ)**2
+
+T = trapezoid(final[r > 85], r[r > 85])
+
+R = trapezoid(final[r < 35], r[r < 35])
+
+return ψ_total, T, R
+
+
+# --- Run the experiment ---
+
+snap_sync, T_sync, R_sync = evolve_resonant()
+
+
+# --- Plot Results ---
+
+fig, axs = plt.subplots(2, 2, figsize=(15,8))
+
+
+# Evolution snapshots
+
+for ψs in snap_sync:
+
+axs[0,0].plot(r, ψs, alpha=0.5)
+
+axs[0,0].plot(r, modulated_barrier(0, 0.06) / 0.08 * np.max([np.max(p) for p in snap_sync]), 'k--', lw=2)
+
+axs[0,0].set_title("Dispatch Duet: Seed + Barrier in Rhythmic Sync")
+
+
+# Transmission
+
+axs[0,1].bar(['→Forward'], [T_sync], color='mediumspringgreen')
+
+axs[0,1].set_ylim(0, 1)
+
+axs[0,1].set_ylabel("Transmission Probability")
+
+axs[0,1].set_title("Access with Harmonic Landscape")
+
+
+# Reflection
+
+axs[1,1].bar(['→Forward'], [R_sync], color='orange')
+
+axs[1,1].set_ylim(0, 1)
+
+axs[1,1].set_ylabel("Reflection Probability")
+
+axs[1,1].set_title("Rejection with Harmonic Landscape")
+
+
+axs[1,0].axis('off') # Unused subplot
+
+plt.tight_layout()
+
+plt.show()
