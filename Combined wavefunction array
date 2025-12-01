@@ -1,0 +1,163 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+from scipy.integrate import trapezoid
+
+
+# --- PARAMETERS ---
+
+grid_size = 120
+
+timesteps = 180
+
+dt = 0.12
+
+width = 6
+
+r = np.linspace(0, grid_size, grid_size)
+
+dr = r[1] - r[0]
+
+
+# --- INCOMING PACKET ψ₁ ---
+
+x1 = 25
+
+k1 = 1.4
+
+ψ1 = np.exp(-((r - x1)**2) / (2 * width**2)) * np.exp(1j * k1 * r)
+
+
+# --- INTERNAL RESONATOR ψ₂ ---
+
+barrier_center = 60
+
+x2 = barrier_center
+
+base_phase = np.pi
+
+amplitude_factor = 2.0
+
+
+# --- Initialize ψ₂ with time-varying phase modulation ---
+
+ψ2 = np.exp(-((r - x2)**2) / (2 * width**2)) * amplitude_factor
+
+
+# --- Combined wavefunction array ---
+
+ψ = np.array([ψ1, ψ2])
+
+n = len(ψ)
+
+
+# --- Barrier Potential ---
+
+barrier_width = 6
+
+barrier_height = 0.06
+
+V = np.zeros_like(r)
+
+V[(r > barrier_center - barrier_width/2) & (r < barrier_center + barrier_width/2)] = barrier_height
+
+
+# --- Storage ---
+
+ψ_total = []
+
+snapshot_times = np.arange(0, timesteps, 12)
+
+ψ_snapshots = []
+
+
+# --- Time Evolution ---
+
+for t in range(timesteps):
+
+phase_mod = base_phase + 0.5 * np.sin(0.06 * t) # Resonator phase oscillation
+
+ψ[1] = np.exp(-((r - x2)**2) / (2 * width**2)) * amplitude_factor * np.exp(1j * phase_mod) # Update ψ₂
+
+
+for i in range(n):
+
+lap = np.zeros_like(ψ[i], dtype=complex)
+
+lap[1:-1] = (ψ[i][2:] - 2*ψ[i][1:-1] + ψ[i][:-2]) / dr**2
+
+ψ[i] += dt * (0.65 * lap - 0.5 * V * ψ[i])
+
+norm = np.sqrt(trapezoid(np.abs(ψ[i])**2, r))
+
+if norm != 0:
+
+ψ[i] /= norm
+
+
+total = np.sum(ψ, axis=0)
+
+ψ_total.append(total)
+
+if t in snapshot_times:
+
+ψ_snapshots.append(np.abs(total)**2)
+
+
+# --- Final Transmission + Reflection ---
+
+final = np.abs(ψ_total[-1])**2
+
+trans_region = r > (barrier_center + barrier_width/2)
+
+refl_region = r < (x1 - width*2)
+
+P_trans = trapezoid(final[trans_region], r[trans_region])
+
+P_refl = trapezoid(final[refl_region ], r[refl_region])
+
+
+# --- Plot Results ---
+
+fig, axs = plt.subplots(3, 1, figsize=(10,10))
+
+
+# 1. Evolution
+
+for i, ψs in enumerate(ψ_snapshots):
+
+axs[0].plot(r, ψs, alpha=0.55, label=f't={snapshot_times[i]}' if i in [0,len(ψ_snapshots)-1] else "")
+
+axs[0].plot(r, V / barrier_height * np.max([np.max(s) for s in ψ_snapshots]), 'k--', lw=2, label='Barrier')
+
+axs[0].set_title("Dispatch Tunneling via Elastic Resonator")
+
+axs[0].legend()
+
+
+# 2. Transmission
+
+axs[1].bar(['Transmission'], [P_trans], color='lightgreen')
+
+axs[1].set_ylim(0, 1)
+
+axs[1].set_ylabel('Probability')
+
+axs[1].set_title('Transmission Probability')
+
+
+# 3. Reflection
+
+axs[2].bar(['Reflection'], [P_refl], color='gold')
+
+axs[2].set_ylim(0, 1)
+
+axs[2].set_ylabel('Probability')
+
+axs[2].set_title('Reflection Probability')
+
+
+plt.tight_layout()
+
+plt.show()
