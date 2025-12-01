@@ -1,0 +1,58 @@
+MBT 3D Vortex: Multi-Particle Quantized Orbits – Code Archive
+This document contains the full code used to generate the 3D MBT Quantized Shell simulation with multi-particle motion in a vortex field. The simulation demonstrates structured orbital dynamics arising purely from curvature-based resistance mechanics, as defined by the Motion = Being Theory (MBT).
+Python Code:
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+
+# MBT 3D vortex field function with soft quantization layers
+def mbt_quantized_vortex_field(x, y, z):
+    r = np.sqrt(x**2 + y**2 + z**2) + 1e-5
+    quantized_radius = np.round(r)
+    diff = r - quantized_radius
+    fx = -y / (r**2 + 1e-2) - diff * x
+    fy = x / (r**2 + 1e-2) - diff * y
+    fz = -z * 0.1 - diff * z
+    return fx, fy, fz
+
+# Initialize particles
+num_particles = 50
+positions = np.random.uniform(-4, 4, size=(num_particles, 3))
+velocities = np.random.normal(0, 0.3, size=(num_particles, 3))
+
+dt = 0.02
+damping = 0.995
+trajectories = [[pos.copy()] for pos in positions]
+
+# Simulate motion
+for _ in range(600):
+    for i in range(num_particles):
+        x, y, z = positions[i]
+        fx, fy, fz = mbt_quantized_vortex_field(x, y, z)
+        velocities[i] = velocities[i] * damping + np.array([fx, fy, fz]) * dt
+        positions[i] += velocities[i] * dt
+        trajectories[i].append(positions[i].copy())
+
+# Plot
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+for traj in trajectories:
+    traj = np.array(traj)
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], linewidth=1, alpha=0.8)
+
+# Add quantized shell zones
+for r in range(1, 4):
+    u, v = np.mgrid[0:2*np.pi:40j, 0:np.pi:20j]
+    x = r * np.cos(u) * np.sin(v)
+    y = r * np.sin(u) * np.sin(v)
+    z = r * np.cos(v)
+    ax.plot_surface(x, y, z, color='cyan', alpha=0.1, edgecolor='none')
+
+ax.set_title("MBT 3D Vortex: Multi-Particle Quantized Orbits")
+ax.set_xlabel("X")
+ax.set_ylabel("Y")
+ax.set_zlabel("Z")
+plt.show()
