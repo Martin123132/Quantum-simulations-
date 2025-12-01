@@ -1,0 +1,103 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+
+N = 32
+
+phase = np.random.uniform(-np.pi, np.pi, (N, N))
+
+chirality = np.zeros_like(phase)
+
+
+def braid(phase, anyons, order, chirality=None):
+
+new_phase = phase.copy()
+
+for pair in order:
+
+a1, a2 = anyons[pair[0]], anyons[pair[1]]
+
+for i in range(N):
+
+for j in range(N):
+
+dist1 = np.hypot(i - a1[0], j - a1[1])
+
+dist2 = np.hypot(i - a2[0], j - a2[1])
+
+if dist1 < 6: new_phase[i, j] += np.pi/2
+
+if dist2 < 6: new_phase[i, j] -= np.pi/2
+
+anyons[pair[0]], anyons[pair[1]] = a2, a1
+
+if chirality is not None:
+
+# Inject a chiral twist along a line
+
+for k in range(N):
+
+chirality[k, k] += np.pi/8 # diagonal twist
+
+if chirality is not None:
+
+new_phase += chirality
+
+return new_phase
+
+
+anyons_init = [(5,5), (5,26), (26,5), (26,26)]
+
+braid_seq1 = [(0,1),(2,3)] # A then B
+
+braid_seq2 = [(2,3),(0,1)] # B then A
+
+
+# Try with chirality (symmetry breaking)
+
+phase1 = braid(phase, anyons_init.copy(), braid_seq1, chirality)
+
+phase2 = braid(phase, anyons_init.copy(), braid_seq2, chirality)
+
+
+def memory_readout(phase, anyons):
+
+return np.array([np.cos(phase[x,y]) for x,y in anyons]).sum()
+
+
+mem1 = memory_readout(phase1, anyons_init)
+
+mem2 = memory_readout(phase2, anyons_init)
+
+
+plt.figure(figsize=(10,4))
+
+plt.subplot(1,2,1)
+
+plt.imshow(np.cos(phase1), cmap='twilight')
+
+plt.title(f'Braiding Order: A then B\nMemory: {mem1:.3f}')
+
+plt.scatter(*zip(*anyons_init), c='cyan', s=100, marker='o', edgecolors='w')
+
+plt.subplot(1,2,2)
+
+plt.imshow(np.cos(phase2), cmap='twilight')
+
+plt.title(f'Braiding Order: B then A\nMemory: {mem2:.3f}')
+
+plt.scatter(*zip(*anyons_init), c='magenta', s=100, marker='o', edgecolors='w')
+
+plt.suptitle('MBT Double Braid: Chirality-Enhanced Logic Demo')
+
+plt.tight_layout()
+
+plt.show()
+
+
+print(f"Memory after A then B: {mem1:.4f}")
+
+print(f"Memory after B then A: {mem2:.4f}")
+
+print(f"Difference (non-Abelian logic): {abs(mem1-mem2):.4e}")
