@@ -1,0 +1,36 @@
+MBT Atomic Simulation – Magnetic Interaction Layer
+
+This evolution introduces a simplified simulation of magnetic vector fields as an emergent property of MBT atomic structures.
+We use a stylized field representation to mimic the influence of particle spins and MBT curvature alignment across a 3D grid.
+
+Python Code
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Create a 3D grid
+x, y, z = np.meshgrid(np.linspace(-5, 5, 15),
+                      np.linspace(-5, 5, 15),
+                      np.linspace(-5, 5, 15))
+
+# Centralized vector field emulating magnetic interaction in MBT
+Bx = -y / (x**2 + y**2 + z**2 + 1)
+By = x / (x**2 + y**2 + z**2 + 1)
+Bz = np.zeros_like(Bx)
+
+# Normalize for vector plotting
+magnitude = np.sqrt(Bx**2 + By**2 + Bz**2)
+Bx /= magnitude
+By /= magnitude
+
+# Plot vector field
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+ax.quiver(x, y, z, Bx, By, Bz, length=0.5, normalize=True, color='purple')
+
+ax.set_title('MBT-Aligned Magnetic Field Representation')
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+plt.tight_layout()
+plt.show()
