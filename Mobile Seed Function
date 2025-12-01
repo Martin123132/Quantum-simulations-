@@ -1,0 +1,142 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+from scipy.integrate import trapezoid
+
+
+# --- Parameters ---
+
+grid_size = 120
+
+timesteps = 180
+
+dt = 0.12
+
+width = 6
+
+r = np.linspace(0, grid_size, grid_size)
+
+dr = r[1] - r[0]
+
+
+# --- Barrier Profile ---
+
+V = np.zeros_like(r)
+
+V[(r > 50) & (r < 56)] = 0.08
+
+V[(r > 62) & (r < 72)] = 0.04
+
+
+# --- Mobile Seed Function ---
+
+def moving_seed(t, freq, base_phase, path):
+
+center = path(t)
+
+phase = base_phase + 0.5 * np.sin(freq * t)
+
+return np.exp(-((r - center)**2)/(2 * width**2)) * np.exp(1j * phase)
+
+
+# --- Evolution Function with Moving Internal Field ---
+
+def evolve_moving_seed(base_phase=np.pi, freq=0.06, x0=95, k0=-1.2):
+
+ψ = np.exp(-((r - x0)**2)/(2 * width**2)) * np.exp(1j * k0 * r)
+
+ψ_total = []
+
+
+# Define ψ₁'s position tracker (approximate linear motion)
+
+def packet_path(t):
+
+return x0 + k0 * dt * t
+
+
+for t in range(timesteps):
+
+ψ_internal = moving_seed(t, freq, base_phase, packet_path)
+
+
+lap_int = np.zeros_like(ψ, dtype=complex)
+
+lap_int[1:-1] = (ψ_internal[2:] - 2 * ψ_internal[1:-1] + ψ_internal[:-2]) / dr**2
+
+
+lap_ψ = np.zeros_like(ψ, dtype=complex)
+
+lap_ψ[1:-1] = (ψ[2:] - 2 * ψ[1:-1] + ψ[:-2]) / dr**2
+
+ψ += dt * (0.65 * lap_ψ - 0.5 * V * ψ + 0.65 * lap_int)
+
+
+norm = np.sqrt(trapezoid(np.abs(ψ)**2, r))
+
+if norm != 0:
+
+ψ /= norm
+
+if t % 15 == 0:
+
+ψ_total.append(np.abs(ψ)**2)
+
+
+final = np.abs(ψ)**2
+
+T = trapezoid(final[r > 85], r[r > 85])
+
+R = trapezoid(final[r < 35], r[r < 35])
+
+return ψ_total, T, R
+
+
+# --- Run the mobile seed experiment ---
+
+snap_mob, T_mob, R_mob = evolve_moving_seed()
+
+
+# --- Plot Results ---
+
+fig, axs = plt.subplots(2, 2, figsize=(15,8))
+
+
+# Evolution plots
+
+for ψs in snap_mob:
+
+axs[0,0].plot(r, ψs, alpha=0.5)
+
+axs[0,0].plot(r, V / np.max(V) * np.max([np.max(p) for p in snap_mob]), 'k--', lw=2)
+
+axs[0,0].set_title("Mobile Seed Dispatch: ψ₁–Seed Trajectory Coupling")
+
+
+# Transmission and Reflection
+
+axs[0,1].bar(['→Forward'], [T_mob], color='lightgreen')
+
+axs[0,1].set_ylim(0, 1)
+
+axs[0,1].set_ylabel("Transmission Probability")
+
+axs[0,1].set_title("Dispatch Access with Mobile Internal Field")
+
+
+axs[1,1].bar(['→Forward'], [R_mob], color='gold')
+
+axs[1,1].set_ylim(0, 1)
+
+axs[1,1].set_ylabel("Reflection Probability")
+
+axs[1,1].set_title("Dispatch Rejection with Mobile Internal Field")
+
+
+axs[1,0].axis('off') # Unused subplot
+
+
+plt.tight_layout()
+
+plt.show()
