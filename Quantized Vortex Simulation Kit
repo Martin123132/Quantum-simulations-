@@ -1,0 +1,57 @@
+MBT Quantized Vortex Simulation Kit
+
+
+Code (Python)
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+def mbt_quantized_vortex_field(x, y, z):
+    r = np.sqrt(x**2 + y**2 + z**2) + 1e-5
+    quantized_r = np.round(r)
+    fx = -(x - quantized_r * x/r) / (r**2 + 1e-2)
+    fy = -(y - quantized_r * y/r) / (r**2 + 1e-2)
+    fz = -(z - quantized_r * z/r) * 0.05
+    return fx, fy, fz
+
+num_particles = 20
+positions = np.random.uniform(-5, 5, (num_particles, 3))
+velocities = np.random.normal(0, 0.5, (num_particles, 3))
+
+dt = 0.02
+damping = 0.995
+energy_input = 0.002
+
+trajectories = [[pos.copy()] for pos in positions]
+
+for _ in range(1000):
+    for i in range(num_particles):
+        x, y, z = positions[i]
+        fx, fy, fz = mbt_quantized_vortex_field(x, y, z)
+        force = np.array([fx, fy, fz])
+        velocities[i] = velocities[i] * damping + force * dt + np.random.normal(0, energy_input, 3)
+        positions[i] += velocities[i] * dt
+        trajectories[i].append(positions[i].copy())
+
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+colors = plt.cm.viridis(np.linspace(0, 1, num_particles))
+for i in range(num_particles):
+    traj = np.array(trajectories[i])
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], color=colors[i])
+
+ax.set_title("MBT 3D Quantized Vortex – 20 Particle System")
+ax.set_xlabel("X")
+ax.set_ylabel("Y")
+ax.set_zlabel("Z")
+plt.show()
+ 
+How to Run
+•	Requires Python 3 with numpy and matplotlib installed.
+•	Run in any Python environment supporting 3D plotting (Jupyter, VSCode, etc).
+•	The simulation runs 1000 time steps by default and plots particle trajectories in 3D.
+ 
+Interpretation
+•	Particles tend to move towards discrete radial shells, reflecting quantized vortex layers.
+•	This emergent structure models MBT’s approach to quantum and cosmic curvature without classical gravity.
