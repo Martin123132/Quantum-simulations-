@@ -1,0 +1,144 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+from scipy.integrate import trapezoid
+
+
+# --- Parameters ---
+
+grid_size = 120
+
+timesteps = 180
+
+dt = 0.12
+
+width = 6
+
+r = np.linspace(0, grid_size, grid_size)
+
+dr = r[1] - r[0]
+
+
+# --- Wavepacket Parameters ---
+
+x0 = 25
+
+k0 = 1.2
+
+
+# --- Frequency Ranges ---
+
+seed_freqs = np.linspace(0.01, 0.12, 12)
+
+barrier_freqs = np.linspace(0.01, 0.12, 12)
+
+
+# --- Breathing seed function (internal MBT curvature seed) ---
+
+def mbt_seed(center, freq, base_phase, t):
+
+phase = base_phase + 0.5 * np.sin(freq * t)
+
+return np.exp(-((r - center)**2)/(2*width**2)) * np.exp(1j * phase)
+
+
+# --- Evolve system with both breathing barrier and internal seed ---
+
+def evolve_mbt_breathing(x0, k0, seed_center, seed_freq, barrier_center, barrier_width, barrier_base_height, barrier_freq):
+
+ψ = np.exp(-((r - x0)**2)/(2*width**2)) * np.exp(1j * k0 * r)
+
+for t in range(timesteps):
+
+# Breathing barrier height
+
+barrier_height = barrier_base_height * (1 + 0.5 * np.sin(barrier_freq * t))
+
+V = np.zeros_like(r)
+
+V[(r > barrier_center - barrier_width/2) & (r < barrier_center + barrier_width/2)] = barrier_height
+
+
+# Internal MBT seed
+
+ψ_int = mbt_seed(center=seed_center, freq=seed_freq, base_phase=0, t=t)
+
+lap_int = np.zeros_like(ψ, dtype=complex)
+
+lap_int[1:-1] = (ψ_int[2:] - 2*ψ_int[1:-1] + ψ_int[:-2]) / dr**2
+
+
+# Evolve ψ with both Laplacians
+
+lap = np.zeros_like(ψ, dtype=complex)
+
+lap[1:-1] = (ψ[2:] - 2*ψ[1:-1] + ψ[:-2]) / dr**2
+
+ψ += dt * (0.65 * lap - 0.5 * V * ψ + 0.3 * lap_int)
+
+
+# Normalize
+
+norm = np.sqrt(trapezoid(np.abs(ψ)**2, r))
+
+if norm != 0:
+
+ψ /= norm
+
+
+final = np.abs(ψ)**2
+
+P_trans = trapezoid(final[r > 85], r[r > 85])
+
+return P_trans
+
+
+# --- Scan over frequencies ---
+
+barrier_center = 60
+
+barrier_width = 6
+
+barrier_base_height = 0.08
+
+seed_center = 53
+
+
+trans_map = np.zeros((len(seed_freqs), len(barrier_freqs)))
+
+
+for i, s_freq in enumerate(seed_freqs):
+
+for j, b_freq in enumerate(barrier_freqs):
+
+P_trans = evolve_mbt_breathing(
+
+x0=x0, k0=k0, seed_center=seed_center, seed_freq=s_freq,
+
+barrier_center=barrier_center, barrier_width=barrier_width,
+
+barrier_base_height=barrier_base_height, barrier_freq=b_freq
+
+)
+
+trans_map[i, j] = P_trans
+
+
+# --- Plot resonance map ---
+
+plt.figure(figsize=(11, 9))
+
+plt.imshow(trans_map, origin='lower', aspect='auto', cmap='viridis',
+
+extent=[barrier_freqs[0], barrier_freqs[-1], seed_freqs[0], seed_freqs[-1]])
+
+plt.xlabel("Breathing Barrier Frequency (rad/step)")
+
+plt.ylabel("MBT Seed Frequency (rad/step)")
+
+plt.title("MBT Dispatch: Double-Resonance Coherence Map\n(Transmission Probability)")
+
+plt.colorbar(label="Transmission Probability")
+
+plt.show()
