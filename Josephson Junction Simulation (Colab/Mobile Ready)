@@ -1,0 +1,107 @@
+# MBT Josephson Junction Simulation (Colab/Mobile Ready)
+
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+
+np.random.seed(42)
+
+N, steps = 32, 200
+
+junction_width = 2 # Width of the weak link
+
+coupling_strong = 1.0 # Normal MBT coupling
+
+coupling_weak = 0.07 # Weak link coupling
+
+
+# --- Lattice: two "superconductors" with weak junction in center ---
+
+theta = np.random.uniform(-np.pi, np.pi, (N, N))
+
+memory = np.zeros_like(theta)
+
+coupling = np.full((N, N), coupling_strong)
+
+coupling[:, N//2-junction_width:N//2+junction_width] = coupling_weak
+
+
+order_history = []
+
+phase_diff_history = []
+
+
+for t in range(steps):
+
+# Local phase update with MBT rules
+
+new_theta = np.copy(theta)
+
+for i in range(N):
+
+for j in range(N):
+
+neighbors = [(i+1)%N, (i-1)%N, (j+1)%N, (j-1)%N]
+
+n_sum = 0
+
+for di, dj in [(-1,0),(1,0),(0,-1),(0,1)]:
+
+ni, nj = (i+di)%N, (j+dj)%N
+
+n_sum += np.sin(theta[ni, nj] - theta[i, j])
+
+new_theta[i, j] += coupling[i, j] * n_sum * 0.13
+
+theta = new_theta + np.random.normal(0, 0.01, theta.shape)
+
+memory += np.cos(theta)
+
+
+# Track coherence (global order parameter)
+
+order = np.abs(np.mean(np.exp(1j*theta)))
+
+order_history.append(order)
+
+
+# Track mean phase left vs. right of junction
+
+left_mean = np.angle(np.mean(np.exp(1j*theta[:, :N//2-junction_width])))
+
+right_mean = np.angle(np.mean(np.exp(1j*theta[:, N//2+junction_width:])))
+
+phase_diff = np.angle(np.exp(1j*(right_mean - left_mean)))
+
+phase_diff_history.append(phase_diff)
+
+
+# --- Plot Results ---
+
+fig, axs = plt.subplots(1, 3, figsize=(16,4))
+
+
+axs[0].imshow(np.cos(theta), cmap='twilight', aspect='auto')
+
+axs[0].set_title('Final MBT Phase Field (cos)')
+
+axs[1].imshow(memory, cmap='inferno', aspect='auto')
+
+axs[1].set_title('Final MBT Memory Field')
+
+axs[2].plot(phase_diff_history, label='Phase Difference (Junction)')
+
+axs[2].plot(order_history, '--', label='Coherence')
+
+axs[2].set_title('MBT Josephson Junction')
+
+axs[2].set_xlabel('Timestep')
+
+axs[2].set_ylabel('Phase/Order')
+
+axs[2].legend()
+
+plt.tight_layout()
+
+plt.show()
