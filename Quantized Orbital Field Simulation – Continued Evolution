@@ -1,0 +1,97 @@
+MBT Quantized Orbital Field Simulation – Continued Evolution
+
+In this continuation of the MBT quantized orbital simulation, we're evolving the model to explore more realistic multi-shell orbital dynamics. The objective is to simulate how a particle could exhibit quantized orbital behavior around a nucleus-like center using only MBT (Motion = Being Theory) mechanics.
+
+Python Code:
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define enhanced MBT quantized orbital field with smoother shell transitions
+def mbt_smooth_quantized_field(x, y):
+    r = np.sqrt(x**2 + y**2)
+    theta = np.arctan2(y, x)
+    r_quantized = np.round(r)
+    fx = -(x - r_quantized * np.cos(theta)) * np.exp(-0.5 * (r - r_quantized)**2)
+    fy = -(y - r_quantized * np.sin(theta)) * np.exp(-0.5 * (r - r_quantized)**2)
+    return fx, fy
+
+# Initialize position and velocity
+px, py = 1.5, 0.0
+vx, vy = 0.0, 1.8
+positions_x = []
+positions_y = []
+
+# Simulation loop
+for _ in range(1000):
+    fx, fy = mbt_smooth_quantized_field(px, py)
+    vx += fx * 0.01
+    vy += fy * 0.01
+    px += vx * 0.01
+    py += vy * 0.01
+    positions_x.append(px)
+    positions_y.append(py)
+
+# Plotting the results
+plt.figure(figsize=(6,6))
+plt.plot(positions_x, positions_y, label='Trajectory')
+plt.scatter([positions_x[-1]], [positions_y[-1]], color='red', label='Final Position')
+for r in range(1, 6):
+    circle = plt.Circle((0, 0), r, color='cyan', fill=False, linestyle='--')
+    plt.gca().add_artist(circle)
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('MBT Smooth Quantized Orbital Field')
+plt.legend()
+plt.axis('equal')
+plt.grid(True)
+plt.show()
+
+
+
+In this continuation of the MBT quantized orbital simulation, we're evolving the model to explore more realistic multi-shell orbital dynamics. The objective is to simulate how a particle could exhibit quantized orbital behavior around a nucleus-like center using only MBT (Motion = Being Theory) mechanics.
+
+Python Code:
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define enhanced MBT quantized orbital field with smoother shell transitions
+def mbt_smooth_quantized_field(x, y):
+    r = np.sqrt(x**2 + y**2)
+    theta = np.arctan2(y, x)
+    r_quantized = np.round(r)
+    fx = -(x - r_quantized * np.cos(theta)) * np.exp(-0.5 * (r - r_quantized)**2)
+    fy = -(y - r_quantized * np.sin(theta)) * np.exp(-0.5 * (r - r_quantized)**2)
+    return fx, fy
+
+# Initialize position and velocity
+px, py = 1.5, 0.0
+vx, vy = 0.0, 1.8
+positions_x = []
+positions_y = []
+
+# Simulation loop
+for _ in range(1000):
+    fx, fy = mbt_smooth_quantized_field(px, py)
+    vx += fx * 0.01
+    vy += fy * 0.01
+    px += vx * 0.01
+    py += vy * 0.01
+    positions_x.append(px)
+    positions_y.append(py)
+
+# Plotting the results
+plt.figure(figsize=(6,6))
+plt.plot(positions_x, positions_y, label='Trajectory')
+plt.scatter([positions_x[-1]], [positions_y[-1]], color='red', label='Final Position')
+for r in range(1, 6):
+    circle = plt.Circle((0, 0), r, color='cyan', fill=False, linestyle='--')
+    plt.gca().add_artist(circle)
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('MBT Smooth Quantized Orbital Field')
+plt.legend()
+plt.axis('equal')
+plt.grid(True)
+plt.show()
