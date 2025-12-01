@@ -1,0 +1,127 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+from scipy.integrate import trapezoid
+
+
+# --- PARAMETERS ---
+
+grid_size = 120
+
+timesteps = 180
+
+dt = 0.12
+
+width = 6
+
+r = np.linspace(0, grid_size, grid_size)
+
+dr = r[1] - r[0]
+
+
+# --- Sweep Ranges ---
+
+phase_list = np.linspace(0, 2*np.pi, 20)
+
+freq_list = np.linspace(0.01, 0.12, 20)
+
+transmission_matrix = np.zeros((len(freq_list), len(phase_list)))
+
+
+# --- SCANNER LOOP ---
+
+for fi, freq in enumerate(freq_list):
+
+for pi, phase_offset in enumerate(phase_list):
+
+
+# --- ψ₁: Inbound packet ---
+
+x1, k1 = 25, 1.4
+
+ψ1 = np.exp(-((r - x1)**2)/(2*width**2)) * np.exp(1j * k1 * r)
+
+
+# --- ψ₂: Resonator inside barrier ---
+
+x2 = 60
+
+ψ2 = np.exp(-((r - x2)**2)/(2*width**2)) * np.exp(1j * phase_offset)
+
+
+ψ = np.array([ψ1, ψ2])
+
+n = len(ψ)
+
+
+# --- Barrier ---
+
+barrier_center = 60
+
+barrier_width, barrier_height = 6, 0.06
+
+V = np.zeros_like(r)
+
+V[(r > barrier_center - barrier_width/2) & (r < barrier_center + barrier_width/2)] = barrier_height
+
+
+# --- Evolution Loop ---
+
+for t in range(timesteps):
+
+current_phase = phase_offset + 0.5 * np.sin(freq * t)
+
+ψ[1] = np.exp(-((r - x2)**2)/(2*width**2)) * np.exp(1j * current_phase)
+
+
+for i in range(n):
+
+lap = np.zeros_like(ψ[i], dtype=complex)
+
+lap[1:-1] = (ψ[i][2:] - 2*ψ[i][1:-1] + ψ[i][:-2]) / dr**2
+
+ψ[i] += dt * (0.65 * lap - 0.5 * V * ψ[i])
+
+norm = np.sqrt(trapezoid(np.abs(ψ[i])**2, r))
+
+if norm != 0:
+
+ψ[i] /= norm
+
+
+# --- Transmission ---
+
+final = np.abs(np.sum(ψ, axis=0))**2
+
+trans_region = r > (barrier_center + barrier_width/2)
+
+P_trans = trapezoid(final[trans_region], r[trans_region])
+
+transmission_matrix[fi, pi] = P_trans
+
+
+# --- Plot Heatmap ---
+
+fig, ax = plt.subplots(figsize=(10, 8))
+
+im = ax.imshow(transmission_matrix, origin='lower', aspect='auto',
+
+extent=[0, 2*np.pi, freq_list[0], freq_list[-1]],
+
+cmap='viridis')
+
+
+ax.set_xlabel("Resonator Phase Offset (rad)")
+
+ax.set_ylabel("Resonator Frequency (rad/step)")
+
+ax.set_title("MBT Dispatch Tunneling — Coherence Surface")
+
+cbar = plt.colorbar(im, ax=ax)
+
+cbar.set_label("Transmission Probability")
+
+plt.tight_layout()
+
+plt.show()
