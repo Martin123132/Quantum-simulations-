@@ -1,0 +1,39 @@
+MBT-Based 3D Atomic Structure Simulation Code
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# Simulation parameters
+num_electrons = 5
+num_steps = 500
+radius = 1.0
+velocity_scale = 0.05
+
+# Time steps
+t = np.linspace(0, 10 * np.pi, num_steps)
+
+# Initialize positions for each electron
+positions = []
+for i in range(num_electrons):
+    phase = (2 * np.pi / num_electrons) * i
+    x = radius * np.cos(t + phase)
+    y = radius * np.sin(t + phase)
+    z = np.sin(2 * t + phase) * velocity_scale  # Adds MBT-like wobble in z
+    positions.append((x, y, z))
+
+# Plotting
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+for x, y, z in positions:
+    ax.plot(x, y, z)
+
+# Plot nucleus
+ax.scatter([0], [0], [0], color='red', s=100, label='Nucleus')
+
+ax.set_title('MBT-Inspired 3D Atomic Structure Simulation')
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+ax.legend()
+plt.show()
