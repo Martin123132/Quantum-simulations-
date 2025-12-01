@@ -1,0 +1,49 @@
+MBT Particle Orbital Simulation
+This simulation demonstrates a particle moving in a toroidal MBT-aligned curvature field. The cyan curve shows the trajectory of the particle, which gradually bends inward into a stable orbit. The red 'X' marks the final particle position after 500 steps.
+ 
+Below is the Python code used to generate the simulation:
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# --- Field and particle parameters ---
+grid_size = 100
+x = np.linspace(-5, 5, grid_size)
+y = np.linspace(-5, 5, grid_size)
+X, Y = np.meshgrid(x, y)
+
+B_x = -Y / (X**2 + Y**2 + 1)
+B_y = X / (X**2 + Y**2 + 1)
+
+pos = np.array([2.0, 0.0])
+vel = np.array([0.0, 0.5])
+trajectory = [pos.copy()]
+
+dt = 0.05
+for _ in range(500):
+    i = np.searchsorted(x, pos[0]) - 1
+    j = np.searchsorted(y, pos[1]) - 1
+    if 0 <= i < grid_size-1 and 0 <= j < grid_size-1:
+        B_local = np.array([B_x[j, i], B_y[j, i]])
+        force = np.cross(np.append(vel, 0), np.append(B_local, 0))[2]
+        acc = np.array([-vel[1], vel[0]]) * force * 0.2
+        vel += acc * dt
+        pos += vel * dt
+        trajectory.append(pos.copy())
+    else:
+        break
+
+trajectory = np.array(trajectory)
+
+plt.figure(figsize=(7, 7))
+plt.streamplot(X, Y, B_x, B_y, color='purple', density=1.2, linewidth=0.5)
+plt.plot(trajectory[:, 0], trajectory[:, 1], color='cyan', label="Particle Path")
+plt.plot(trajectory[-1, 0], trajectory[-1, 1], "rx", label="Final Position")
+plt.xlim(-5, 5)
+plt.ylim(-5, 5)
+plt.title("MBT Field with Particle Orbiting Path")
+plt.xlabel("X")
+plt.ylabel("Y")
+plt.legend()
+plt.grid(True)
+plt.show()
