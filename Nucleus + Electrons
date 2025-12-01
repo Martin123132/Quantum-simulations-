@@ -1,0 +1,76 @@
+1. Initialize Particles (Nucleus + Electrons)
+
+import numpy as np
+
+class Particle:
+    def __init__(self, position, velocity, charge, mass, type):
+        self.position = np.array(position, dtype=float)
+        self.velocity = np.array(velocity, dtype=float)
+        self.charge = charge
+        self.mass = mass
+        self.type = type
+
+particles = []
+
+# Create protons and neutrons (nucleus)
+for _ in range(3):
+    particles.append(Particle(np.random.randn(3)*0.2, [0,0,0], charge=+1, mass=1, type='proton'))
+    particles.append(Particle(np.random.randn(3)*0.2, [0,0,0], charge=0, mass=1, type='neutron'))
+
+# Create electrons in wider orbits
+for _ in range(3):
+    particles.append(Particle(np.random.randn(3)*1.5, np.random.randn(3)*0.1, charge=-1, mass=0.0005, type='electron'))
+        
+2. MBT Force Function (Motion-Based Gravity + Electrostatics)
+
+def mbt_force(p1, p2):
+    r_vec = p2.position - p1.position
+    r = np.linalg.norm(r_vec) + 1e-6
+    direction = r_vec / r
+    motion_gravity = direction * 0.01 / (r**2)
+    electric_force = direction * (p1.charge * p2.charge) / (r**2)
+    return motion_gravity + electric_force
+        
+3. Simulation Loop (Timestep Integration)
+
+dt = 0.01
+steps = 500
+
+positions_over_time = []
+
+for step in range(steps):
+    forces = [np.zeros(3) for _ in particles]
+    for i, p1 in enumerate(particles):
+        for j, p2 in enumerate(particles):
+            if i != j:
+                forces[i] += mbt_force(p1, p2)
+    
+    for i, p in enumerate(particles):
+        acc = forces[i] / p.mass
+        p.velocity += acc * dt
+        p.position += p.velocity * dt
+
+    positions_over_time.append([p.position.copy() for p in particles])
+        
+4. 3D Visualization of Atomic System
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+def plot_3d_particles(particles, title="MBT Atomic Simulation"):
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111, projection='3d')
+
+    for p in particles:
+        color = 'red' if p.type == 'proton' else 'blue' if p.type == 'electron' else 'gray'
+        ax.scatter(*p.position, color=color, label=p.type, s=50)
+
+    ax.set_title(title)
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+    plt.legend()
+    plt.show()
+
+plot_3d_particles(particles)
+        
