@@ -1,0 +1,84 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+
+# Parameters
+
+timesteps = 201
+
+# Always get exactly timesteps points!
+
+collapse = np.concatenate([np.linspace(0, 1, timesteps//2), np.linspace(1, 0, timesteps - timesteps//2)])
+
+
+noise_strength = 0.2 # Try 0.0 (no noise), 0.1, 0.2, up to 0.5 for wildness
+
+
+# Bell S (order) and MBT memory law
+
+S_quantum = 2.828
+
+S_classical = 2.0
+
+S_mbt = S_quantum - (S_quantum - S_classical) * collapse
+
+
+# MBT memory law (mirrors order)
+
+memory_mbt = 1.0 - collapse
+
+
+# Add noise: Gaussian random fluctuations
+
+np.random.seed(42) # For repeatability
+
+S_noisy = S_mbt + np.random.normal(0, noise_strength, size=timesteps)
+
+memory_noisy = memory_mbt + np.random.normal(0, noise_strength, size=timesteps)
+
+
+# Clip within physical range
+
+S_noisy = np.clip(S_noisy, S_classical, S_quantum)
+
+memory_noisy = np.clip(memory_noisy, 0, 1)
+
+
+# Plot both (clean vs noisy)
+
+fig, ax1 = plt.subplots(figsize=(8,5))
+
+ax1.plot(S_mbt, label='Bell S (Clean)', color='tab:blue', linewidth=2)
+
+ax1.plot(S_noisy, label='Bell S (Noisy)', color='tab:blue', linestyle='--')
+
+ax1.axhline(S_classical, color='grey', linestyle='--', label='Classical Limit')
+
+ax1.axhline(S_quantum, color='purple', linestyle='--', label='Quantum Limit')
+
+ax1.set_ylabel('Bell S (Order Parameter)')
+
+ax1.set_xlabel('Time (collapse → healing)')
+
+ax2 = ax1.twinx()
+
+ax2.plot(memory_mbt, label='MBT Memory (Clean)', color='tab:green', linewidth=2)
+
+ax2.plot(memory_noisy, label='MBT Memory (Noisy)', color='tab:green', linestyle='--')
+
+ax2.set_ylabel('MBT Memory')
+
+fig.suptitle('Decoherence/Noise: MBT Order and Memory (Quantum to Classical Transition)')
+
+lines1, labels1 = ax1.get_legend_handles_labels()
+
+lines2, labels2 = ax2.get_legend_handles_labels()
+
+ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+
+plt.tight_layout()
+
+plt.savefig('mbt_noise_experiment.png', dpi=150)
+
+plt.show()
