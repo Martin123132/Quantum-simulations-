@@ -1,0 +1,107 @@
+# MBT Superconductor Simulation: Disorder-Order (Critical Transition)
+
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+
+# Parameters
+
+N = 32 # Grid size
+
+timesteps = 100 # Simulation steps per temperature
+
+temps = np.linspace(2.5, 0.1, 18) # Temperature (noise) steps: high to low
+
+J = 1.0 # Coupling (strong order at low T)
+
+
+# Helper: MBT Coupling function
+
+def mbt_coupling(phi_grid):
+
+"""Returns field after MBT-style interaction with nearest neighbors"""
+
+lap = (
+
+np.roll(phi_grid, 1, 0) + np.roll(phi_grid, -1, 0) +
+
+np.roll(phi_grid, 1, 1) + np.roll(phi_grid, -1, 1) - 4 * phi_grid
+
+)
+
+return J * lap
+
+
+# Helper: Order parameter (coherence)
+
+def order_param(phi):
+
+vec = np.exp(1j * phi)
+
+return np.abs(np.mean(vec))
+
+
+# Storage
+
+orders = []
+
+last_phi, last_mem = None, None
+
+
+# Main: Step through decreasing temperature
+
+phi = np.random.uniform(0, 2 * np.pi, (N, N)) # Initial random phases
+
+memory = np.zeros((N, N))
+
+for T in temps:
+
+for t in range(timesteps):
+
+# Noise (temperature)
+
+noise = np.random.normal(0, T, (N, N))
+
+# MBT update
+
+dphi = mbt_coupling(phi) + noise
+
+phi = (phi + dphi) % (2 * np.pi)
+
+memory = 0.93 * memory + 0.07 * np.cos(phi) # Trace memory
+
+last_phi = np.cos(phi) # Store for later visualization
+
+last_mem = memory
+
+orders.append(order_param(phi))
+
+
+# Plot
+
+fig, axes = plt.subplots(1, 3, figsize=(16, 4))
+
+axes[0].imshow(last_phi, cmap='twilight', interpolation='nearest')
+
+axes[0].set_title("Final MBT Phase Field (cos)")
+
+axes[1].imshow(last_mem, cmap='inferno', interpolation='nearest')
+
+axes[1].set_title("Final MBT Memory Field")
+
+axes[2].plot(np.flip(temps), orders, label='Coherence (Order)')
+
+axes[2].axvline(x=temps[np.argmax(np.diff(orders))], color='k', linestyle='--', label='Critical Point?')
+
+axes[2].set_xlabel("Temperature (noise, ↓)")
+
+axes[2].set_ylabel("Order")
+
+axes[2].set_title("Disorder → Order (MBT Superconductivity)")
+
+axes[2].legend()
+
+plt.tight_layout()
+
+plt.show()
