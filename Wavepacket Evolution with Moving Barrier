@@ -1,0 +1,165 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+from scipy.integrate import trapezoid
+
+
+# --- PARAMETERS ---
+
+grid_size = 120
+
+timesteps = 180
+
+dt = 0.12
+
+width = 6
+
+r = np.linspace(0, grid_size, grid_size)
+
+dr = r[1] - r[0]
+
+
+# --- Moving Barrier parameters ---
+
+barrier_width = 6
+
+barrier_height = 0.06
+
+initial_barrier_center = 55
+
+barrier_speed = 0.22 # grid units per time step (tune for fun: 0.1–0.4)
+
+
+# --- Breathing MBT Seed parameters ---
+
+seed_center = 53
+
+seed_freq = 0.06
+
+seed_base_phase = 0
+
+
+# --- Inbound packet ---
+
+x0 = 25
+
+k0 = 1.2
+
+ψ = np.exp(-((r - x0)**2)/(2*width**2)) * np.exp(1j * k0 * r)
+
+
+# --- Storage ---
+
+ψ_total = []
+
+snapshot_times = np.arange(0, timesteps, 15)
+
+ψ_snapshots = []
+
+
+for t in range(timesteps):
+
+# --- Moving barrier: update position ---
+
+barrier_center = initial_barrier_center + barrier_speed * t
+
+V = np.zeros_like(r)
+
+left_edge = barrier_center - barrier_width/2
+
+right_edge = barrier_center + barrier_width/2
+
+V[(r > left_edge) & (r < right_edge)] = barrier_height
+
+
+# --- MBT Internal Seed (dispatch) ---
+
+phase = seed_base_phase + 0.5 * np.sin(seed_freq * t)
+
+ψ_internal = np.exp(-((r - seed_center)**2)/(2*width**2)) * np.exp(1j * phase)
+
+
+# --- Add MBT internal curvature to Laplacian ---
+
+lap_int = np.zeros_like(ψ, dtype=complex)
+
+lap_int[1:-1] = (ψ_internal[2:] - 2*ψ_internal[1:-1] + ψ_internal[:-2]) / dr**2
+
+
+lap_ψ = np.zeros_like(ψ, dtype=complex)
+
+lap_ψ[1:-1] = (ψ[2:] - 2*ψ[1:-1] + ψ[:-2]) / dr**2
+
+
+ψ += dt * (0.65 * lap_ψ - 0.5 * V * ψ + 0.65 * lap_int)
+
+
+# Normalize
+
+norm = np.sqrt(trapezoid(np.abs(ψ)**2, r))
+
+if norm != 0:
+
+ψ /= norm
+
+if t in snapshot_times:
+
+ψ_total.append(np.abs(ψ)**2)
+
+
+# --- Transmission & Reflection ---
+
+final = np.abs(ψ)**2
+
+T = trapezoid(final[r > 85], r[r > 85])
+
+R = trapezoid(final[r < 35], r[r < 35])
+
+
+# --- Plot Results ---
+
+fig, axs = plt.subplots(2, 1, figsize=(12,8))
+
+
+# 1. Wavepacket Evolution with Moving Barrier
+
+for ψs in ψ_total:
+
+axs[0].plot(r, ψs, alpha=0.5)
+
+# Draw moving barrier trajectory
+
+for t, ψs in zip(snapshot_times, ψ_total):
+
+barrier_c = initial_barrier_center + barrier_speed * t
+
+left = barrier_c - barrier_width/2
+
+right = barrier_c + barrier_width/2
+
+# Draw barrier as vertical lines
+
+axs[0].axvline(left, color='k', linestyle='dashed', alpha=0.25)
+
+axs[0].axvline(right, color='k', linestyle='dashed', alpha=0.25)
+
+axs[0].set_title("MBT Dispatch Tunneling with Moving Barrier")
+
+axs[0].set_ylabel("Probability Density")
+
+
+# 2. Transmission and Reflection Bars
+
+axs[1].bar(['Transmission', 'Reflection'], [T, R], color=['lightgreen', 'gold'])
+
+axs[1].set_ylim(0, 1)
+
+axs[1].set_ylabel("Probability")
+
+axs[1].set_title("Final Probabilities")
+
+
+plt.tight_layout()
+
+plt.show()
