@@ -1,0 +1,64 @@
+import numpy as np
+from scipy.integrate import trapezoid
+import matplotlib.pyplot as plt
+
+# --- Grid & Time ---
+r = np.linspace(0, 50, 500)
+dr = r[1] - r[0]
+dt = 0.05
+timesteps = 300
+
+# --- Potential Well (for MBT Bond) ---
+def well(r, center=25, width=5, depth=1.5):
+    # Attractive well to simulate bonding
+    return 1 - depth * np.exp(-((r - center)**2) / (2 * width**2))
+
+# --- Wavepackets (hydrogen "atoms") ---
+def gaussian(r, r0, width):
+    return np.exp(-((r - r0)**2) / (2 * width**2))
+
+ψ1 = gaussian(r, 20, 1.6)
+ψ2 = gaussian(r, 30, 1.6)
+v = np.zeros_like(r)
+
+overlaps = []
+CoMs1, CoMs2 = [], []
+
+for frame in range(timesteps):
+    # Update "bonding potential" (well stays put)
+    pot = well(r)
+    ψ_total = ψ1 + ψ2
+    ψ_total /= np.max(np.abs(ψ_total))  # Normalize
+
+    lap = np.zeros_like(ψ_total)
+    lap[1:-1] = (ψ_total[2:] - 2*ψ_total[1:-1] + ψ_total[:-2]) / dr**2
+    accel = lap / pot
+    v += accel * dt
+    ψ_total += v * dt
+
+    # Partition back into two
+    ψ1 = ψ_total * np.exp(-((r - 20)**2) / 50)
+    ψ2 = ψ_total * np.exp(-((r - 30)**2) / 50)
+
+    overlap = trapezoid(ψ1 * ψ2, r)
+    overlaps.append(overlap)
+    CoMs1.append(trapezoid(r * np.abs(ψ1), r) / trapezoid(np.abs(ψ1), r))
+    CoMs2.append(trapezoid(r * np.abs(ψ2), r) / trapezoid(np.abs(ψ2), r))
+
+# --- Results ---
+print(f"Final Overlap: {overlaps[-1]:.3f}")
+print(f"CoM1, CoM2: {CoMs1[-1]:.2f}, {CoMs2[-1]:.2f}")
+
+plt.figure(figsize=(8,3))
+plt.plot(overlaps, label='Overlap ∫ψ₁·ψ₂')
+plt.axhline(y=0.7, color='gray', ls='--', label='Bond Threshold')
+plt.xlabel('Time step')
+plt.ylabel('Bond Strength')
+plt.title('MBT Hydrogen Bonding – Overlap Over Time')
+plt.legend()
+plt.show()
+
+if overlaps[-1] > 0.7:
+    print("✅ BOND: The wavepackets merged and STUCK TOGETHER. MBT hydrogen BOND WORKS!")
+else:
+    print("❌ NO BOND: The wavepackets did NOT merge, or split apart again.")
