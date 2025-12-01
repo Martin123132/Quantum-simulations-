@@ -1,0 +1,45 @@
+MBT Quantized Orbital Field Simulation
+This simulation models a quantized orbital field using the MBT (Motion = Being Theory) framework. It applies a quantized radial curvature field to a moving particle, causing it to experience discrete zones of attraction resembling electron shells in an atom. The particle's trajectory is influenced by the difference between its current radius and the nearest quantized layer.
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the MBT quantized orbital field
+def mbt_quantized_field(x, y):
+    r = np.sqrt(x**2 + y**2)
+    theta = np.arctan2(y, x)
+    r_quantized = np.round(r)
+    fx = -(x - r_quantized * np.cos(theta))
+    fy = -(y - r_quantized * np.sin(theta))
+    return fx, fy
+
+# Initialize position and velocity
+px, py = 1.5, 0.0
+vx, vy = 0.0, 1.8
+positions_x = []
+positions_y = []
+
+# Simulation
+for _ in range(1000):
+    fx, fy = mbt_quantized_field(px, py)
+    vx += fx * 0.01
+    vy += fy * 0.01
+    px += vx * 0.01
+    py += vy * 0.01
+    positions_x.append(px)
+    positions_y.append(py)
+
+# Plotting
+plt.figure(figsize=(6,6))
+plt.plot(positions_x, positions_y, label='Trajectory')
+plt.scatter([positions_x[-1]], [positions_y[-1]], color='red', label='Final Position')
+for r in range(1, 6):
+    circle = plt.Circle((0, 0), r, color='cyan', fill=False, linestyle='--')
+    plt.gca().add_artist(circle)
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('MBT Quantized Orbital Field')
+plt.legend()
+plt.axis('equal')
+plt.grid(True)
+plt.show()
