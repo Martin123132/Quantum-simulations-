@@ -1,0 +1,50 @@
+MBT Quantized Orbital Field Simulation
+This simulation demonstrates the emergence of quantized orbit-like structures using the Motion = Being Theory (MBT). The model uses a radial standing-wave tension field to guide a particle into quantized loops.
+Python Code
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the MBT quantized field
+def mbt_quantized_field(x, y):
+    r = np.sqrt(x**2 + y**2)
+    theta = np.arctan2(y, x)
+
+    radial_component = np.sin(5 * r) / (r + 0.1)
+    fx = -x * radial_component
+    fy = -y * radial_component
+
+    return fx, fy
+
+# Initialize particle
+px, py = 2.0, 0.0
+vx, vy = 0.0, 1.2
+trajectory_x = []
+trajectory_y = []
+
+# Simulation loop
+for _ in range(2000):
+    fx, fy = mbt_quantized_field(px, py)
+    vx += fx * 0.01
+    vy += fy * 0.01
+    px += vx * 0.01
+    py += vy * 0.01
+    trajectory_x.append(px)
+    trajectory_y.append(py)
+
+# Plotting
+x = np.linspace(-5, 5, 200)
+y = np.linspace(-5, 5, 200)
+X, Y = np.meshgrid(x, y)
+FX, FY = mbt_quantized_field(X, Y)
+plt.figure(figsize=(8, 8))
+plt.streamplot(X, Y, FX, FY, color='purple', density=1.2, linewidth=0.5)
+plt.plot(trajectory_x, trajectory_y, color='cyan', linewidth=2)
+plt.scatter(trajectory_x[-1], trajectory_y[-1], color='red', label='Final Position')
+plt.title("MBT Quantized Orbital Field")
+plt.xlabel("X")
+plt.ylabel("Y")
+plt.legend()
+plt.axis("equal")
+plt.grid(True)
+plt.show()
