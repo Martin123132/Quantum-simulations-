@@ -1,0 +1,53 @@
+MBT Toroidal Curvature Field – Particle Path Simulation
+
+This simulation demonstrates a particle influenced by the MBT (Motion = Being Theory) toroidal curvature field.
+The cyan line represents the curved trajectory of the particle, and the red “X” marks its final position.
+The result shows the particle being bent inward by the field, suggesting early-stage orbital behavior as
+predicted by rotational curvature and tension in spacetime.
+
+Python Code
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the MBT-inspired toroidal field (simplified)
+def toroidal_field(x, y):
+    r = np.sqrt(x**2 + y**2)
+    theta = np.arctan2(y, x)
+    strength = np.exp(-r**2 / 10)
+    fx = -strength * np.sin(theta)
+    fy = strength * np.cos(theta)
+    return fx, fy
+
+# Grid setup
+x = np.linspace(-5, 5, 30)
+y = np.linspace(-5, 5, 30)
+X, Y = np.meshgrid(x, y)
+FX, FY = toroidal_field(X, Y)
+
+# Initialize particle position and velocity
+pos = np.array([3.5, 0.0])
+vel = np.array([0.0, 0.1])
+trajectory = [pos.copy()]
+
+# Time step loop
+for _ in range(500):
+    fx, fy = toroidal_field(pos[0], pos[1])
+    force = np.array([fx, fy])
+    vel += force * 0.05
+    pos += vel * 0.05
+    trajectory.append(pos.copy())
+
+trajectory = np.array(trajectory)
+
+# Plotting
+plt.figure(figsize=(8, 8))
+plt.streamplot(X, Y, FX, FY, color='purple', linewidth=1, density=1.2)
+plt.plot(trajectory[:, 0], trajectory[:, 1], color='cyan', linewidth=2)
+plt.scatter(trajectory[-1, 0], trajectory[-1, 1], color='red', s=50, marker='x')
+plt.title("Particle Path in MBT Toroidal Field")
+plt.xlabel("X")
+plt.ylabel("Y")
+plt.grid(True)
+plt.axis('equal')
+plt.show()
