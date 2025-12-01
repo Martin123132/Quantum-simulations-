@@ -1,0 +1,49 @@
+MBT Quantized Orbital Simulation – Evolution Code
+
+This simulation demonstrates the quantized orbital behavior of a particle under the MBT-aligned curvature field.
+The MBT quantized field attempts to simulate quantized energy levels akin to electron shells by rounding the radial
+distance and attracting the particle to the nearest quantized level. 
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the MBT quantized orbital field
+def mbt_quantized_field(x, y):
+    r = np.sqrt(x**2 + y**2)
+    theta = np.arctan2(y, x)
+    r_quantized = np.round(r)
+    fx = -(x - r_quantized * np.cos(theta))
+    fy = -(y - r_quantized * np.sin(theta))
+    return fx, fy
+
+# Initialize position and velocity
+px, py = 1.5, 0.0
+vx, vy = 0.0, 1.8
+positions_x = []
+positions_y = []
+
+# Simulation
+for _ in range(1000):
+    fx, fy = mbt_quantized_field(px, py)
+    vx += fx * 0.01
+    vy += fy * 0.01
+    px += vx * 0.01
+    py += vy * 0.01
+    positions_x.append(px)
+    positions_y.append(py)
+
+# Plotting
+plt.figure(figsize=(6,6))
+plt.plot(positions_x, positions_y, label='Trajectory')
+plt.scatter([positions_x[-1]], [positions_y[-1]], color='red', label='Final Position')
+for r in range(1, 6):
+    circle = plt.Circle((0, 0), r, color='cyan', fill=False, linestyle='--')
+    plt.gca().add_artist(circle)
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('MBT Quantized Orbital Field')
+plt.legend()
+plt.axis('equal')
+plt.grid(True)
+plt.show()
