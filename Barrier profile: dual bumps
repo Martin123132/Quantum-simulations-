@@ -1,0 +1,165 @@
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+from scipy.integrate import trapezoid
+
+
+# --- Parameters ---
+
+grid_size = 120
+
+timesteps = 180
+
+dt = 0.12
+
+width = 6
+
+r = np.linspace(0, grid_size, grid_size)
+
+dr = r[1] - r[0]
+
+
+# --- Barrier profile: dual bumps ---
+
+V = np.zeros_like(r)
+
+V[(r > 50) & (r < 56)] = 0.08 # Left barrier
+
+V[(r > 62) & (r < 72)] = 0.04 # Right barrier
+
+
+# --- Breathing seed function ---
+
+def breathing_seed(center, freq, base_phase, t):
+
+phase = base_phase + 0.5 * np.sin(freq * t)
+
+return np.exp(-((r - center)**2)/(2*width**2)) * np.exp(1j * phase)
+
+
+# --- Evolution function with two internal seeds ---
+
+def evolve_packet(x0, k0, centers, phases, freqs):
+
+ψ = np.exp(-((r - x0)**2)/(2*width**2)) * np.exp(1j * k0 * r)
+
+ψ_total = []
+
+
+for t in range(timesteps):
+
+# Sum Laplacians of both seeds
+
+lap_total = np.zeros_like(ψ, dtype=complex)
+
+for c, p, f in zip(centers, phases, freqs):
+
+ψ_seed = breathing_seed(c, f, p, t)
+
+lap = np.zeros_like(ψ, dtype=complex)
+
+lap[1:-1] = (ψ_seed[2:] - 2*ψ_seed[1:-1] + ψ_seed[:-2]) / dr**2
+
+lap_total += lap
+
+
+# Evolve ψ with barrier and seeds
+
+lap_ψ = np.zeros_like(ψ, dtype=complex)
+
+lap_ψ[1:-1] = (ψ[2:] - 2*ψ[1:-1] + ψ[:-2]) / dr**2
+
+ψ += dt * (0.65 * lap_ψ - 0.5 * V * ψ + 0.65 * lap_total)
+
+
+# Normalize
+
+norm = np.sqrt(trapezoid(np.abs(ψ)**2, r))
+
+if norm != 0:
+
+ψ /= norm
+
+if t % 15 == 0:
+
+ψ_total.append(np.abs(ψ)**2)
+
+
+final = np.abs(ψ)**2
+
+T = trapezoid(final[r > 85], r[r > 85])
+
+R = trapezoid(final[r < 35], r[r < 35])
+
+return ψ_total, T, R
+
+
+# --- Twin seed parameters ---
+
+centers = [53, 67]
+
+phases = [0, np.pi/2]
+
+freqs = [0.06, 0.06]
+
+
+# --- Run Forward (L→R) and Reverse (R→L) ---
+
+snap_fwd, T_fwd, R_fwd = evolve_packet(x0=25, k0=1.2, centers=centers, phases=phases, freqs=freqs)
+
+snap_rev, T_rev, R_rev = evolve_packet(x0=95, k0=-1.2, centers=centers, phases=phases, freqs=freqs)
+
+
+# --- Plot ---
+
+fig, axs = plt.subplots(2, 2, figsize=(15,8))
+
+
+# Forward evolution
+
+for ψs in snap_fwd:
+
+axs[0,0].plot(r, ψs, alpha=0.5)
+
+axs[0,0].plot(r, V / np.max(V) * np.max([np.max(p) for p in snap_fwd]), 'k--', lw=2)
+
+axs[0,0].set_title("Twin Seed Dispatch Diode: Forward Evolution")
+
+
+# Reverse evolution
+
+for ψs in snap_rev:
+
+axs[0,1].plot(r, ψs, alpha=0.5)
+
+axs[0,1].plot(r, V / np.max(V) * np.max([np.max(p) for p in snap_rev]), 'k--', lw=2)
+
+axs[0,1].set_title("Twin Seed Dispatch Diode: Reverse Evolution")
+
+
+# Transmission comparison
+
+axs[1,0].bar(['→Forward', '←Reverse'], [T_fwd, T_rev], color=['lightgreen', 'lightblue'])
+
+axs[1,0].set_ylim(0, 1)
+
+axs[1,0].set_ylabel("Transmission Probability")
+
+axs[1,0].set_title("Directional Tunneling (Twin Seeds)")
+
+
+# Reflection comparison
+
+axs[1,1].bar(['→Forward', '←Reverse'], [R_fwd, R_rev], color=['gold', 'red'])
+
+axs[1,1].set_ylim(0, 1)
+
+axs[1,1].set_ylabel("Reflection Probability")
+
+axs[1,1].set_title("Directional Reflection (Twin Seeds)")
+
+
+plt.tight_layout()
+
+plt.show()
