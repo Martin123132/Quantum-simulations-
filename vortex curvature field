@@ -1,0 +1,380 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # For 3D plotting
+
+# --- Define 3D MBT vortex curvature field ---
+def mbt_vortex_field(x, y, z):
+    r_xy = np.sqrt(x**2 + y**2) + 1e-5
+    # Vortex force in xy-plane (circulating)
+    fx = -y / (r_xy**2)
+    fy = x / (r_xy**2)
+    # Radial restoring force towards center in z
+    fz = -z / (np.abs(z) + 1)
+    return fx, fy, fz
+
+# --- Initialize particles ---
+num_particles = 50
+np.random.seed(42)
+positions = np.random.uniform(-5, 5, (num_particles, 3))
+velocities = np.random.normal(0, 0.1, (num_particles, 3))
+
+dt = 0.05
+steps = 600
+
+# Store trajectories
+trajectories = np.zeros((num_particles, steps, 3))
+trajectories[:, 0, :] = positions
+
+# --- Simulate particle motion ---
+for t in range(1, steps):
+    for i in range(num_particles):
+        x, y, z = positions[i]
+        fx, fy, fz = mbt_vortex_field(x, y, z)
+        velocities[i, 0] += fx * dt
+        velocities[i, 1] += fy * dt
+        velocities[i, 2] += fz * dt
+        positions[i] += velocities[i] * dt
+        trajectories[i, t, :] = positions[i]
+
+# --- Plotting ---
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+colors = plt.cm.viridis(np.linspace(0, 1, num_particles))
+for i in range(num_particles):
+    ax.plot(trajectories[i, :, 0], trajectories[i, :, 1], trajectories[i, :, 2], color=colors[i])
+
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+ax.set_title('3D MBT Vortex Particle Trajectories')
+ax.grid(True)
+plt.show()
+
+
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # For 3D plotting
+
+# --- Define 3D MBT vortex curvature field ---
+def mbt_vortex_field(x, y, z):
+    r_xy = np.sqrt(x**2 + y**2) + 1e-5
+    # Vortex force in xy-plane (circulating)
+    fx = -y / (r_xy**2)
+    fy = x / (r_xy**2)
+    # Radial restoring force towards center in z
+    fz = -z / (np.abs(z) + 1)
+    return fx, fy, fz
+
+# --- Initialize particles ---
+num_particles = 50
+np.random.seed(42)
+positions = np.random.uniform(-5, 5, (num_particles, 3))
+velocities = np.random.normal(0, 0.1, (num_particles, 3))
+
+dt = 0.05
+steps = 600
+
+# Store trajectories
+trajectories = np.zeros((num_particles, steps, 3))
+trajectories[:, 0, :] = positions
+
+# --- Simulate particle motion ---
+for t in range(1, steps):
+    for i in range(num_particles):
+        x, y, z = positions[i]
+        fx, fy, fz = mbt_vortex_field(x, y, z)
+        velocities[i, 0] += fx * dt
+        velocities[i, 1] += fy * dt
+        velocities[i, 2] += fz * dt
+        positions[i] += velocities[i] * dt
+        trajectories[i, t, :] = positions[i]
+
+# --- Plotting ---
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+colors = plt.cm.viridis(np.linspace(0, 1, num_particles))
+for i in range(num_particles):
+    ax.plot(trajectories[i, :, 0], trajectories[i, :, 1], trajectories[i, :, 2], color=colors[i])
+
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+ax.set_title('3D MBT Vortex Particle Trajectories')
+ax.grid(True)
+plt.show()
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# MBT 3D quantized vortex field function
+def mbt_quantized_vortex_field(x, y, z):
+    r = np.sqrt(x**2 + y**2 + z**2) + 1e-5
+    theta = np.arctan2(y, x)
+    phi = np.arccos(z / r)
+    # Quantize radius to nearest integer shell
+    r_quantized = np.round(r)
+    # Calculate radial difference to quantized shell
+    dr = r - r_quantized
+    # Force pulls toward quantized shell with vortex twist
+    fx = -dr * (x / r) - y / (r**2 + 1e-2)
+    fy = -dr * (y / r) + x / (r**2 + 1e-2)
+    fz = -dr * (z / r) - z / (r**2 + 1e-2) * 0.5  # vertical twist
+    return fx, fy, fz
+
+# Initialize particles at different radii and velocities
+num_particles = 5
+positions = np.array([
+    [1.2, 0, 0],
+    [2.5, 0, 0],
+    [3.1, 0, 0],
+    [4.8, 0, 0],
+    [6.0, 0, 0],
+], dtype=float)
+
+velocities = np.array([
+    [0, 1.0, 0],
+    [0, 0.7, 0],
+    [0, 0.65, 0],
+    [0, 0.55, 0],
+    [0, 0.5, 0],
+], dtype=float)
+
+dt = 0.02
+damping = 0.995
+energy_input = 0.002
+
+# Track trajectories
+trajectories = [ [pos.copy()] for pos in positions ]
+
+# Simulation loop
+for _ in range(1000):
+    for i in range(num_particles):
+        x, y, z = positions[i]
+        fx, fy, fz = mbt_quantized_vortex_field(x, y, z)
+        velocities[i] = velocities[i]*damping + np.array([fx, fy, fz])*dt + np.random.normal(0, energy_input, 3)
+        positions[i] += velocities[i]*dt
+        trajectories[i].append(positions[i].copy())
+
+# Plot trajectories
+fig = plt.figure(figsize=(8,8))
+ax = fig.add_subplot(111, projection='3d')
+
+colors = ['r','g','b','m','c']
+for i in range(num_particles):
+    traj = np.array(trajectories[i])
+    ax.plot(traj[:,0], traj[:,1], traj[:,2], color=colors[i], label=f'Particle {i+1}')
+    ax.scatter(traj[-1,0], traj[-1,1], traj[-1,2], color=colors[i], marker='o')
+
+# Draw quantized shells as transparent spheres
+shell_radii = np.arange(1, 8)
+for r_shell in shell_radii:
+    u = np.linspace(0, 2 * np.pi, 30)
+    v = np.linspace(0, np.pi, 15)
+    x_sphere = r_shell * np.outer(np.cos(u), np.sin(v))
+    y_sphere = r_shell * np.outer(np.sin(u), np.sin(v))
+    z_sphere = r_shell * np.outer(np.ones(np.size(u)), np.cos(v))
+    ax.plot_surface(x_sphere, y_sphere, z_sphere, color='cyan', alpha=0.1, linewidth=0)
+
+ax.set_title('MBT Quantized Vortex Particle Trajectories')
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+ax.legend()
+ax.set_box_aspect([1,1,1])
+plt.show()
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# MBT 3D vortex field function
+def mbt_vortex_field(x, y, z):
+    r = np.sqrt(x**2 + y**2 + z**2) + 1e-5
+    fx = -y / (r**2 + 1e-2)
+    fy = x / (r**2 + 1e-2)
+    fz = -z / (r**2 + 1e-2) * 0.5  # slight vertical twist
+    return fx, fy, fz
+
+# Interaction force between two particles (simplified MBT-inspired)
+def interaction_force(p1, p2):
+    diff = p2 - p1
+    dist = np.linalg.norm(diff) + 1e-5
+    force_mag = 0.1 / dist**2  # inverse square repulsion (adjustable)
+    force_vec = force_mag * (diff / dist)
+    return force_vec
+
+# Initialize two particles
+positions = np.array([[1, 0, 0], [-1, 0, 0]], dtype=float)
+velocities = np.array([[0, 0.5, 0], [0, -0.5, 0]], dtype=float)
+
+dt = 0.02
+damping = 0.995
+energy_input = 0.002
+
+trajectories = [[pos.copy()] for pos in positions]
+
+# Simulation loop
+for _ in range(800):
+    forces = []
+    for i in range(2):
+        fx, fy, fz = mbt_vortex_field(*positions[i])
+        f_ext = np.array([fx, fy, fz])
+        # Interaction force from other particle
+        f_int = interaction_force(positions[i], positions[1 - i]) * (-1 if i == 0 else 1)
+        total_force = f_ext + f_int
+        velocities[i] = velocities[i]*damping + total_force*dt + np.random.normal(0, energy_input, 3)
+        positions[i] += velocities[i]*dt
+        trajectories[i].append(positions[i].copy())
+
+# Plotting
+fig = plt.figure(figsize=(7,7))
+ax = fig.add_subplot(111, projection='3d')
+
+colors = ['r', 'b']
+for i in range(2):
+    traj = np.array(trajectories[i])
+    ax.plot(traj[:,0], traj[:,1], traj[:,2], color=colors[i])
+
+ax.set_title('Two-Particle MBT Vortex Interaction')
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+plt.show()
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# MBT 3D vortex field function
+def mbt_vortex_field(x, y, z):
+    r = np.sqrt(x**2 + y**2 + z**2) + 1e-5
+    fx = -y / (r**2 + 1e-2)
+    fy = x / (r**2 + 1e-2)
+    fz = -z / (r**2 + 1e-2) * 0.5  # slight vertical component
+    return fx, fy, fz
+
+# Initialize 12 particles evenly spaced around XY circle, slight Z offset for variety
+num_particles = 12
+angles = np.linspace(0, 2*np.pi, num_particles, endpoint=False)
+positions = np.array([[2*np.cos(a), 2*np.sin(a), 0.1*np.sin(3*a)] for a in angles], dtype=float)
+velocities = np.array([[-0.3*np.sin(a), 0.3*np.cos(a), 0] for a in angles], dtype=float)
+
+dt = 0.02
+damping = 0.995
+energy_input = 0.002
+
+trajectories = [[pos.copy()] for pos in positions]
+
+# Simulation loop
+for _ in range(800):
+    for i in range(num_particles):
+        x, y, z = positions[i]
+        fx, fy, fz = mbt_vortex_field(x, y, z)
+        velocities[i] = velocities[i]*damping + np.array([fx, fy, fz])*dt + np.random.normal(0, energy_input, 3)
+        positions[i] += velocities[i]*dt
+        trajectories[i].append(positions[i].copy())
+
+# Plot trajectories
+fig = plt.figure(figsize=(8,8))
+ax = fig.add_subplot(111, projection='3d')
+
+colors = plt.cm.tab20(np.linspace(0, 1, num_particles))
+for i in range(num_particles):
+    traj = np.array(trajectories[i])
+    ax.plot(traj[:,0], traj[:,1], traj[:,2], color=colors[i])
+
+ax.set_title('12-Particle MBT Vortex Interaction with Damping')
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+plt.show()
+
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from mpl_toolkits.mplot3d import Axes3D
+
+# --- MBT Simulation Parameters ---
+num_particles = 20
+num_shells = 3
+shell_radii = [3 * (i + 1) for i in range(num_shells)]  # MBT stable curvature zones
+dt = 0.05
+steps = 500
+ambient_energy_chance = 0.02  # chance of spontaneous motion injection
+energy_boost = 0.5            # strength of energy input (excitation)
+damping_factor = 0.98         # decay back to stability (relaxation)
+
+# --- Initial Particle Positions ---
+positions = np.random.randn(num_particles, 3)
+positions /= np.linalg.norm(positions, axis=1).reshape(-1, 1)  # normalize to unit vectors
+scaling_factors = np.random.choice(shell_radii, num_particles).reshape(-1, 1)
+positions *= scaling_factors  # place particles on random shells
+
+# --- Initial Velocities ---
+velocities = np.random.randn(num_particles, 3) * 0.1
+
+# --- MBT Curvature Guidance Function ---
+def mbt_curvature_force(pos):
+    r = np.linalg.norm(pos)
+    if r == 0:
+        return np.zeros(3)
+    direction = -pos / r
+    curvature_pull = sum([np.exp(-((r - shell_r)**2)) for shell_r in shell_radii])
+    return direction * curvature_pull
+
+# --- Visualization Setup ---
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_subplot(111, projection='3d')
+scat = ax.scatter([], [], [], s=10)
+
+# Draw MBT Curvature Shells (Stable Zones)
+u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+for radius in shell_radii:
+    x = radius * np.cos(u) * np.sin(v)
+    y = radius * np.sin(u) * np.sin(v)
+    z = radius * np.cos(v)
+    ax.plot_wireframe(x, y, z, color='gray', alpha=0.2)
+
+ax.set_xlim(-10, 10)
+ax.set_ylim(-10, 10)
+ax.set_zlim(-10, 10)
+ax.set_title("MBT: Natural Electron Shell Transitions")
+
+# --- Update Function ---
+def update(frame):
+    global positions, velocities
+    for i in range(num_particles):
+        # Natural energy injection (ambient randomness)
+        if np.random.rand() < ambient_energy_chance:
+            velocities[i] += np.random.randn(3) * energy_boost
+
+        # MBT curvature guidance
+        velocities[i] += mbt_curvature_force(positions[i]) * dt
+
+        # Damping (energy decay)
+        velocities[i] *= damping_factor
+
+        # Update position
+        positions[i] += velocities[i] * dt
+
+    scat._offsets3d = (positions[:, 0], positions[:, 1], positions[:, 2])
+    return scat,
+
+# --- Run Animation ---
+ani = FuncAnimation(fig, update, frames=steps, interval=50, blit=False)
+plt.show()
